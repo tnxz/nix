@@ -99,4 +99,4 @@ if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh)"
 fi
 
-prompt="%n#%m %B%~%b "
+prompt="%m %B%~%b "
