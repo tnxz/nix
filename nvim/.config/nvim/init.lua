@@ -281,22 +281,6 @@ require("lazy").setup({
     { "folke/persistence.nvim", event = "BufReadPre", opts = {} },
 
     {
-      "willothy/flatten.nvim",
-      lazy = false,
-      opts = {
-        window = { open = "alternate" },
-        hooks = {
-          pre_open = function()
-            require("snacks").terminal.toggle(
-              vim.o.shell .. " -il",
-              { cwd = vim.uv.cwd(), count = 2424 }
-            )
-          end,
-        },
-      },
-    },
-
-    {
       "folke/snacks.nvim",
       lazy = false,
       priority = 1001,
@@ -410,10 +394,7 @@ require("lazy").setup({
         {
           "`",
           function()
-            require("snacks").terminal.toggle(
-              vim.o.shell .. " -il",
-              { cwd = vim.uv.cwd(), count = 2424 }
-            )
+            require("snacks").terminal.toggle()
           end,
           desc = "Toggle Terminal",
           mode = { "n", "t" },
@@ -444,7 +425,15 @@ require("lazy").setup({
         scope = { enabled = true },
         words = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
-        terminal = { win = { position = "float", height = 0, width = 0 } },
+        terminal = {
+          win = {
+            position = "float",
+            height = 0.4,
+            width = 0,
+            row = vim.api.nvim_win_get_height(0) * 0.7,
+          },
+          shell = vim.o.shell .. " -il",
+        },
         win = { wo = { fillchars = "eob: ,vert: " } },
         input = { enabled = true },
         explorer = { replace_netrw = true },
@@ -550,6 +539,20 @@ require("lazy").setup({
               },
             },
           },
+        },
+      },
+    },
+
+    {
+      "willothy/flatten.nvim",
+      dependencies = { "folke/snacks.nvim" },
+      lazy = false,
+      opts = {
+        window = { open = "alternate" },
+        hooks = {
+          pre_open = function()
+            require("snacks").terminal.toggle()
+          end,
         },
       },
     },
