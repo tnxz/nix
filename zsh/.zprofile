@@ -42,3 +42,7 @@ export GOPATH="$XDG_DATA_HOME/go"
 export GOCACHE="$XDG_CACHE_HOME/go-build"
 export GOENV="$GOPATH/env"
 path=("$GOPATH/bin" $path)
+
+export CARGO_HOME="$XDG_DATA_HOME/cargo"
+export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
+path=("$CARGO_HOME/bin" $path)
