@@ -599,7 +599,7 @@ require("lazy").setup({
       "neovim/nvim-lspconfig",
       init = function()
         -- stylua: ignore
-        vim.lsp.enable({"lua_ls", "pyright", "clangd", "gopls", "jdtls", "ts_ls", "zls", "nil_ls"})
+        vim.lsp.enable({ "lua_ls", "pyright", "clangd", "gopls", "jdtls", "ts_ls", "zls" })
       end,
     },
 
