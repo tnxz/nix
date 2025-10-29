@@ -60,6 +60,7 @@ bindkey -M vicmd '^[[P' vi-delete-char
 bindkey -M vicmd '^[e' edit-command-line
 bindkey -M visual '^[[P' vi-delete
 
+alias ls="ls --color=auto"
 alias ll="ls -AS"
 alias c="printf '\e[H\e[3J'"
 alias l="ls -AS"
