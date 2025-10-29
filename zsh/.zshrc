@@ -5,6 +5,8 @@ setopt incappendhistory
 setopt histignorealldups
 
 [[ -d "$XDG_DATA_HOME"/zsh ]] || mkdir -p "$XDG_DATA_HOME"/zsh
+HISTSIZE=10000000
+SAVEHIST=10000000
 HISTFILE="$XDG_DATA_HOME"/zsh/zsh_history
 zstyle ':completion:*' cache-path "$XDG_DATA_HOME"/zsh/zcompcache
 zstyle ':completion:*' menu select
