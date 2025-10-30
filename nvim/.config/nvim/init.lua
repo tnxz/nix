@@ -1,6 +1,3 @@
----@diagnostic disable-next-line: undefined-global
-local vim = vim
-
 local providers = { "python3", "node", "perl", "ruby" }
 for _, provider in ipairs(providers) do
   vim.g["loaded_" .. provider .. "_provider"] = 0
@@ -671,6 +668,12 @@ require("lazy").setup({
       init = function()
         -- stylua: ignore
         vim.lsp.enable({ "lua_ls", "pyright", "clangd", "gopls", "jdtls", "ts_ls", "zls" })
+        vim.lsp.config("lua_ls", {
+          settings = {
+            Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true) } },
+          },
+        })
+        vim.lsp.config("pyright", { settings = { python = { pythonPath = ".venv/bin/python" } } })
       end,
     },
 
