@@ -104,7 +104,7 @@ vim.api.nvim_create_autocmd("TermOpen", {
 })
 
 vim.api.nvim_create_autocmd({ "TermRequest" }, {
-  desc = "Handles OSC 7 dir change requests",
+  group = vim.api.nvim_create_augroup("term_osc7", { clear = true }),
   callback = function(ev)
     local val, n = string.gsub(ev.data.sequence, "\027]7;file://[^/]*", "")
     if n > 0 then
@@ -356,49 +356,42 @@ require("lazy").setup({
           function()
             require("snacks").picker.buffers()
           end,
-          desc = "Buffers",
         },
         {
           "<space>h",
           function()
             require("snacks").picker.help()
           end,
-          desc = "Help",
         },
         {
           "<space>q",
           function()
             require("snacks").bufdelete()
           end,
-          desc = "Buffer Delete",
         },
         {
           "<space>/",
           function()
             require("snacks").picker.grep()
           end,
-          desc = "Grep",
         },
         {
           "<space>s",
           function()
             require("snacks").picker()
           end,
-          desc = "Snacks Biltins",
         },
         {
           "<space>e",
           function()
             require("snacks").explorer()
           end,
-          desc = "File Explorer",
         },
         {
           "<space>f",
           function()
             require("snacks").picker.files()
           end,
-          desc = "Find Files",
         },
         {
           "<space>c",
@@ -416,21 +409,18 @@ require("lazy").setup({
               end,
             })
           end,
-          desc = "Find Config File",
         },
         {
           "<space>v",
           function()
             require("snacks").picker.projects()
           end,
-          desc = "Projects",
         },
         {
           "<space>u",
           function()
             require("snacks").picker.recent()
           end,
-          desc = "Recent",
         },
         {
           "<space>g",
@@ -441,25 +431,21 @@ require("lazy").setup({
             end
             require("snacks").lazygit()
           end,
-          desc = "Lazygit",
         },
         {
           "<space>z",
           function()
             require("snacks").picker.zoxide()
           end,
-          desc = "Zoxide",
         },
         {
           "<space>d",
           function()
             require("snacks").picker.diagnostics()
           end,
-          desc = "Diagnostics",
         },
         {
           "<space>n",
-          desc = "Neovim News",
           function()
             require("snacks").win({
               file = vim.api.nvim_get_runtime_file("doc/news.txt", false)[1],
