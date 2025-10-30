@@ -86,6 +86,87 @@ vim.api.nvim_create_autocmd({ "BufUnload", "BufDelete" }, {
   end,
 })
 
+vim.api.nvim_create_autocmd("TermOpen", {
+  group = vim.api.nvim_create_augroup("term_esc", { clear = true }),
+  callback = function()
+    local esc_timer
+    vim.keymap.set("t", "<esc>", function()
+      esc_timer = esc_timer or vim.uv.new_timer()
+      if esc_timer == nil then
+        return
+      end
+      if esc_timer:is_active() then
+        esc_timer:stop()
+        return [[<c-\><c-n>]]
+      else
+        esc_timer:start(200, 0, function() end)
+        return "<esc>"
+      end
+    end, { expr = true })
+  end,
+})
+
+vim.api.nvim_create_autocmd({ "TermRequest" }, {
+  desc = "Handles OSC 7 dir change requests",
+  callback = function(ev)
+    local val, n = string.gsub(ev.data.sequence, "\027]7;file://[^/]*", "")
+    if n > 0 then
+      local dir = val
+      if vim.fn.isdirectory(dir) == 0 then
+        vim.notify("invalid dir: " .. dir)
+        return
+      end
+      vim.b[ev.buf].osc7_dir = dir
+      if vim.api.nvim_get_current_buf() == ev.buf then
+        vim.cmd.cd(dir)
+      end
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd("DirChanged", {
+  group = vim.api.nvim_create_augroup("term_cwd_sync", { clear = true }),
+  callback = function()
+    local cwd = (vim.uv or vim.loop).cwd()
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if not vim.api.nvim_buf_is_loaded(buf) then
+        goto continue
+      end
+      if vim.bo[buf].buftype ~= "terminal" then
+        goto continue
+      end
+      local id = vim.b[buf].terminal_job_id
+      local pid = vim.b[buf].terminal_job_pid
+      if not id or not pid then
+        goto continue
+      end
+      if vim.fn.jobwait({ id }, 0)[1] ~= -1 then
+        goto continue
+      end
+      local parent_cmd = vim.trim(vim.fn.system("ps -p " .. pid .. " -o comm="))
+      if not parent_cmd:match("zsh") then
+        goto continue
+      end
+      local child_pids = vim.fn.systemlist("pgrep -P " .. pid)
+      if #child_pids == 1 and child_pids[1] == "" then
+        child_pids = {}
+      end
+      if #child_pids > 0 then
+        goto continue
+      end
+      vim.schedule(function()
+        vim.api.nvim_chan_send(id, "\x1b")
+        vim.api.nvim_chan_send(id, "0D")
+        vim.api.nvim_chan_send(id, "i")
+        vim.api.nvim_chan_send(id, vim.api.nvim_replace_termcodes("<C-e>", true, false, true))
+        vim.api.nvim_chan_send(id, vim.api.nvim_replace_termcodes("<C-u>", true, false, true))
+        vim.api.nvim_chan_send(id, "cd '" .. cwd .. "'\r")
+      end)
+      ::continue::
+    end
+  end,
+})
+
 local tokyopath = vim.fn.stdpath("data") .. "/lazy/tokyonight.nvim"
 local tokyorepo = "https://github.com/folke/tokyonight.nvim.git"
 if not (vim.uv or vim.loop).fs_stat(tokyopath) then
@@ -392,14 +473,6 @@ require("lazy").setup({
           desc = "Diagnostics",
         },
         {
-          "`",
-          function()
-            require("snacks").terminal.toggle()
-          end,
-          desc = "Toggle Terminal",
-          mode = { "n", "t" },
-        },
-        {
           "<space>n",
           desc = "Neovim News",
           function()
@@ -425,23 +498,10 @@ require("lazy").setup({
         scope = { enabled = true },
         words = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
-        terminal = {
-          win = {
-            position = "float",
-            height = 0.4,
-            width = 0,
-            row = vim.api.nvim_win_get_height(0) * 0.7,
-          },
-          shell = vim.o.shell .. " -il",
-        },
         win = { wo = { fillchars = "eob: ,vert: " } },
         input = { enabled = true },
         explorer = { replace_netrw = true },
-        styles = {
-          input = { border = "none" },
-          terminal = { wo = { winbar = "", winblend = 15 } },
-          scratch = { border = "single" },
-        },
+        styles = { input = { border = "none" }, scratch = { border = "single" } },
         picker = {
           sources = {
             command_history = { layout = "dropdown" },
@@ -545,15 +605,26 @@ require("lazy").setup({
 
     {
       "willothy/flatten.nvim",
-      dependencies = { "folke/snacks.nvim" },
+      dependencies = { "akinsho/toggleterm.nvim" },
       lazy = false,
       opts = {
         window = { open = "alternate" },
         hooks = {
           pre_open = function()
-            require("snacks").terminal.toggle()
+            vim.cmd.ToggleTerm()
           end,
         },
+      },
+    },
+
+    {
+      "akinsho/toggleterm.nvim",
+      cmd = "ToggleTerm",
+      keys = { "`" },
+      opts = {
+        open_mapping = [[`]],
+        direction = "tab",
+        shell = vim.o.shell .. " -il",
       },
     },
 

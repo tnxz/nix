@@ -1,3 +1,13 @@
+# https://lacamb.re/blog/osc7_in_neovim_third_time.html
+function print_osc7() {
+  if [ "$ZSH_SUBSHELL" -eq 0 ] ; then
+    printf "\033]7;file://$HOST/$PWD\033\\"
+  fi
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook -Uz chpwd print_osc7
+print_osc7
+
 setopt interactivecomments
 setopt appendhistory
 setopt sharehistory
