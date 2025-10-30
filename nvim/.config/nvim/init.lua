@@ -302,27 +302,15 @@ require("lazy").setup({
         {
           "<space>t",
           function()
-            local has_diff = vim.wo.diff
-            local target_win
-
-            if not has_diff then
-              require("gitsigns").diffthis({ split = "rightbelow" }, "")
+            if not vim.wo.diff then
+              require("gitsigns").diffthis("", { split = "rightbelow" })
             end
-
-            for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-              local buf = vim.api.nvim_win_get_buf(win)
-              local bufname = vim.api.nvim_buf_get_name(buf)
-              if bufname:find("^gitsigns://") then
-                target_win = win
-                break
+            for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+              if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(w)):find("^gitsigns://") then
+                return vim.schedule(function()
+                  vim.api.nvim_win_close(w, true)
+                end)
               end
-            end
-
-            if target_win then
-              vim.schedule(function()
-                vim.api.nvim_win_close(target_win, true)
-              end)
-              return ""
             end
           end,
         },
