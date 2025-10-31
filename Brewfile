@@ -1,6 +1,6 @@
 tap "koekeishiya/formulae"
 tap "oven-sh/bun"
-tap "tnxz/tap"
+tap "disrupted/neovim-nightly"
 brew "alejandra"
 brew "direnv"
 brew "node"
@@ -49,9 +49,9 @@ brew "zls"
 brew "zoxide"
 brew "koekeishiya/formulae/skhd"
 brew "oven-sh/bun/bun"
-brew "tnxz/tap/neovim-nightly"
 cask "font-iosevka-nerd-font", greedy: true
 cask "font-iosevka-ss03", greedy: true
 cask "helium-browser", greedy: true
 cask "kitty", greedy: true
+cask "neovim-nightly", greedy: true
 cask "orbstack", greedy: true
