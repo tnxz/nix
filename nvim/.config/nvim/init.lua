@@ -426,6 +426,7 @@ require("lazy").setup({
               confirm = function(picker, item)
                 picker:close()
                 if item then
+                  require("snacks").bufdelete.all()
                   vim.cmd.cd("~/src/nix")
                   vim.schedule(function()
                     vim.cmd("edit " .. item.text)
@@ -461,12 +462,6 @@ require("lazy").setup({
           "<space>z",
           function()
             require("snacks").picker.zoxide()
-          end,
-        },
-        {
-          "<space>d",
-          function()
-            require("snacks").picker.diagnostics()
           end,
         },
         {
@@ -625,6 +620,13 @@ require("lazy").setup({
     },
 
     {
+      "folke/trouble.nvim",
+      cmd = "Trouble",
+      keys = { { "<space>d", "<cmd>Trouble diagnostics toggle<cr>" } },
+      opts = {},
+    },
+
+    {
       "stevearc/conform.nvim",
       event = { "VimEnter" },
       cmd = { "ConformInfo" },
@@ -654,6 +656,7 @@ require("lazy").setup({
             nix = { "alejandra" },
             python = { "ruff", "ruff_fix", "ruff_format", "ruff_organize_imports" },
             rust = { "rustfmt" },
+            tombi = { "tombi" },
             yaml = { "yamlfmt" },
             zig = { "zigfmt" },
             ["_"] = { "trim_whitespace" },
@@ -666,7 +669,7 @@ require("lazy").setup({
       "neovim/nvim-lspconfig",
       init = function()
         -- stylua: ignore
-        vim.lsp.enable({ "lua_ls", "pyright", "clangd", "gopls", "jdtls", "ts_ls", "zls" })
+        vim.lsp.enable({"clangd", "gopls", "jdtls", "lua_ls", "pyright", "rust_analyzer", "tombi", "ts_ls", "zls"})
         vim.lsp.config("lua_ls", {
           settings = {
             Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true) } },
