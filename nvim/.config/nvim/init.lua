@@ -3,6 +3,23 @@ for _, provider in ipairs(providers) do
   vim.g["loaded_" .. provider .. "_provider"] = 0
 end
 
+vim.g.terminal_color_0 = "#000000"
+vim.g.terminal_color_1 = "#cc0403"
+vim.g.terminal_color_2 = "#19cb00"
+vim.g.terminal_color_3 = "#cecb00"
+vim.g.terminal_color_4 = "#0d73cc"
+vim.g.terminal_color_5 = "#cb1ed1"
+vim.g.terminal_color_6 = "#0dcdcd"
+vim.g.terminal_color_7 = "#c0caf5"
+vim.g.terminal_color_8 = "#767676"
+vim.g.terminal_color_9 = "#f2201f"
+vim.g.terminal_color_10 = "#23fd00"
+vim.g.terminal_color_11 = "#fffd00"
+vim.g.terminal_color_12 = "#1a8fff"
+vim.g.terminal_color_13 = "#fd28ff"
+vim.g.terminal_color_14 = "#14ffff"
+vim.g.terminal_color_15 = "#c0caf5"
+
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<cr>")
 vim.keymap.set("n", "<left>", "<nop>")
 vim.keymap.set("n", "<right>", "<nop>")
@@ -24,11 +41,15 @@ vim.cmd({
   args = {
     "nosc", "nosmd", "noswf", "nowb", "nowrap", "ph=10", "noru",
     "ch=0", "et", "fcs=eob:\\ ,vert:\\ ", "ic", "scs", "mouse=",
-    "shm+=I", "spr", "ts=2", "cb=unnamedplus", "sw=2", "scl=no",
-    "ls=0", "udf", "sb", "so=7", "ve=block", "cul"
+    "shm+=I", "spr", "ts=2", "sw=2", "scl=no", "ls=0", "stal=0",
+    "sb", "so=7", "ve=block", "cul", "udf"
   },
   cmd = "set",
 })
+
+vim.schedule(function()
+  vim.o.clipboard = "unnamedplus"
+end)
 
 vim.api.nvim_create_autocmd("TextYankPost", {
   group = vim.api.nvim_create_augroup("highlight_yank", { clear = true }),
