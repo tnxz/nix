@@ -281,6 +281,7 @@ require("lazy").setup({
           end,
           show_hidden = true,
         },
+        delete_to_trash = true,
         float = { border = "single" },
         confirmation = { border = "single" },
         progress = { border = "single" },
@@ -656,7 +657,7 @@ require("lazy").setup({
             nix = { "alejandra" },
             python = { "ruff", "ruff_fix", "ruff_format", "ruff_organize_imports" },
             rust = { "rustfmt" },
-            tombi = { "tombi" },
+            toml = { "tombi" },
             yaml = { "yamlfmt" },
             zig = { "zigfmt" },
             ["_"] = { "trim_whitespace" },
@@ -669,7 +670,7 @@ require("lazy").setup({
       "neovim/nvim-lspconfig",
       init = function()
         -- stylua: ignore
-        vim.lsp.enable({"clangd", "gopls", "jdtls", "lua_ls", "pyright", "rust_analyzer", "tombi", "ts_ls", "zls"})
+        vim.lsp.enable({"clangd", "gopls", "jdtls", "lua_ls", "pyright", "rust_analyzer", "ts_ls", "zls"})
         vim.lsp.config("lua_ls", {
           settings = {
             Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true) } },
