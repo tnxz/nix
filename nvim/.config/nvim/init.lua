@@ -206,9 +206,7 @@ require("tokyonight").setup({
   },
   style = "night",
   on_highlights = function(hl, _)
-    hl.CursorLine = { bg = "#1e2232" }
-    hl.CursorLineNr = { link = "CursorLine" }
-    hl.CursorLineSign = { link = "CursorLine" }
+    hl.CursorLine = { bg = "#16161e" }
   end,
 })
 require("tokyonight").load()
@@ -615,7 +613,7 @@ require("lazy").setup({
       keys = { "`" },
       opts = {
         open_mapping = [[`]],
-        direction = "tab",
+        direction = "horizontal",
         size = function(term)
           if term.direction == "horizontal" then
             return math.floor(vim.o.lines * 0.4)
