@@ -41,8 +41,8 @@ vim.cmd({
   args = {
     "nosc", "nosmd", "noswf", "nowb", "nowrap", "ph=10", "noru",
     "ch=0", "et", "fcs=eob:\\ ,vert:\\ ", "ic", "scs", "mouse=",
-    "shm+=I", "spr", "ts=2", "sw=2", "scl=no", "ls=0", "stal=0",
-    "sb", "so=7", "ve=block", "cul", "udf"
+    "shm+=I", "sb", "ts=2", "sw=2", "scl=yes", "ls=0", "stal=0",
+    "spr", "so=7", "ve=block", "cul", "udf", "nu", "rnu"
   },
   cmd = "set",
 })
@@ -616,6 +616,13 @@ require("lazy").setup({
       opts = {
         open_mapping = [[`]],
         direction = "tab",
+        size = function(term)
+          if term.direction == "horizontal" then
+            return math.floor(vim.o.lines * 0.4)
+          elseif term.direction == "vertical" then
+            return math.floor(vim.o.columns * 0.4)
+          end
+        end,
         shell = vim.o.shell .. " -il",
       },
     },

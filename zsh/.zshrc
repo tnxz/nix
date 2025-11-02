@@ -13,6 +13,7 @@ setopt appendhistory
 setopt sharehistory
 setopt incappendhistory
 setopt histignorealldups
+setopt prompt_subst
 
 [[ -d "$XDG_DATA_HOME"/zsh ]] || mkdir -p "$XDG_DATA_HOME"/zsh
 HISTSIZE=10000000
@@ -112,4 +113,4 @@ if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh)"
 fi
 
-prompt="%m %B%~%b "
+prompt='%B%F{magenta}$(if [[ $PWD == $HOME* ]]; then print -Pn "../$USER${PWD#$HOME}"; else print -Pn "%2~"; fi)%f%b '
