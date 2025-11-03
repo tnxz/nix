@@ -235,6 +235,7 @@ require("lazy").setup({
             filter = false,
             lua = false,
             help = false,
+            input = { view = "cmdline_popup" },
           },
         },
         views = {
@@ -472,9 +473,8 @@ require("lazy").setup({
         words = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
         win = { wo = { fillchars = "eob: ,vert: " } },
-        input = { enabled = true },
         explorer = { replace_netrw = true },
-        styles = { input = { border = "none" }, scratch = { border = "single" } },
+        styles = { scratch = { border = "single" } },
         picker = {
           sources = {
             command_history = { layout = "dropdown" },
