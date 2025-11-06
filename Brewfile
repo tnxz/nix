@@ -1,3 +1,7 @@
+system "defaults write -g ApplePressAndHoldEnabled -bool false"
+system "defaults write -g InitialKeyRepeat -int 10"
+system "defaults write -g KeyRepeat -int 1"
+system "defaults write com.apple.dock persistent-apps -array"
 tap "disrupted/neovim-nightly"
 tap "koekeishiya/formulae"
 tap "oven-sh/bun"
@@ -49,7 +53,7 @@ brew "yamlfmt"
 brew "zig"
 brew "zls"
 brew "zoxide"
-brew "koekeishiya/formulae/skhd"
+brew "koekeishiya/formulae/skhd", postinstall: "/opt/homebrew/bin/skhd --install-service && /opt/homebrew/bin/skhd --start-service"
 brew "oven-sh/bun/bun"
 cask "font-iosevka-nerd-font", greedy: true
 cask "font-iosevka-ss03", greedy: true
@@ -57,3 +61,7 @@ cask "helium-browser", greedy: true
 cask "kitty", greedy: true
 cask "neovim-nightly", greedy: true
 cask "orbstack", greedy: true
+system "/Applications/OrbStack.app/Contents/MacOS/bin/orbctl config set app.start_at_login true"
+system "/Applications/OrbStack.app/Contents/MacOS/bin/orbctl config set rosetta false"
+system "/Applications/OrbStack.app/Contents/MacOS/bin/orbctl config set setup.use_admin false"
+system "open 'x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles'"
