@@ -470,7 +470,6 @@ require("lazy").setup({
         bigfile = { enabled = true },
         quickfile = { enabled = true },
         scope = { enabled = true },
-        words = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
         win = { wo = { fillchars = "eob: ,vert: " } },
         explorer = { replace_netrw = true },
