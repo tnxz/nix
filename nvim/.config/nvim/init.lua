@@ -390,12 +390,6 @@ require("lazy").setup({
           end,
         },
         {
-          "<space>e",
-          function()
-            require("snacks").explorer()
-          end,
-        },
-        {
           "<space>f",
           function()
             require("snacks").picker.files()
@@ -469,11 +463,8 @@ require("lazy").setup({
       opts = {
         bigfile = { enabled = true },
         quickfile = { enabled = true },
-        scope = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
-        win = { wo = { fillchars = "eob: ,vert: " } },
         explorer = { replace_netrw = true },
-        styles = { scratch = { border = "single" } },
         picker = {
           sources = {
             command_history = { layout = "dropdown" },
@@ -493,7 +484,7 @@ require("lazy").setup({
                 picker:action("load_session")
               end,
             },
-            explorer = { layout = "right", focus = "input", hidden = true },
+            explorer = { layout = "right", hidden = true },
             grep = { hidden = true },
           },
           win = {
