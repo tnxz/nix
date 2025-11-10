@@ -254,7 +254,7 @@ require("lazy").setup({
       "stevearc/oil.nvim",
       event = { "VimEnter */*,.*", "BufNew */*,.*" },
       cmd = "Oil",
-      keys = { { "-", "<cmd>Oil<cr>" } },
+      keys = { { "-", "<cmd>Oil .<cr>" } },
       opts = {
         keymaps = { ["`"] = false },
         view_options = {
