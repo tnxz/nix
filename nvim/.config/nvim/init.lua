@@ -436,12 +436,6 @@ require("lazy").setup({
           end,
         },
         {
-          "<space>z",
-          function()
-            require("snacks").picker.zoxide()
-          end,
-        },
-        {
           "<space>n",
           function()
             require("snacks").win({
@@ -475,9 +469,6 @@ require("lazy").setup({
             files = { hidden = true },
             projects = {
               dev = "~/src",
-              projects = vim.tbl_filter(function(p)
-                return vim.fn.isdirectory(p) == 1
-              end, vim.fn.glob("~/src/*", true, true)),
               recent = false,
               confirm = function(picker)
                 require("snacks").bufdelete.all()
