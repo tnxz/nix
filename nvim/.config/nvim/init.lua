@@ -12,11 +12,6 @@ vim.keymap.set("n", "<tab>", "<C-w><C-w>")
 vim.keymap.set("n", "<space>r", "<cmd>restart<cr>")
 vim.keymap.set("n", "<space>w", "<cmd>write<cr>")
 
-vim.g.clipboard = {
-  copy = { ["+"] = "pbcopy", ["*"] = "pbcopy" },
-  paste = { ["+"] = "pbpaste", ["*"] = "pbpaste" },
-}
-
 vim.diagnostic.config({ virtual_text = true })
 
 vim.cmd({
@@ -29,6 +24,8 @@ vim.cmd({
   },
   cmd = "set",
 })
+
+vim.g.clipboard = "pbcopy"
 
 vim.schedule(function()
   vim.o.clipboard = "unnamedplus"
