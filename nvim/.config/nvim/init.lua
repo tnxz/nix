@@ -455,6 +455,12 @@ require("lazy").setup({
         bigfile = { enabled = true },
         quickfile = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
+        terminal = { win = { position = "float", height = 0, width = 0 }, shell = "/bin/zsh -il" },
+        notifier = {
+          enabled = true,
+          style = "minimal",
+          icons = { error = "", warn = "", info = "", debug = "", trace = "" },
+        },
         explorer = { replace_netrw = true },
         picker = {
           sources = {
