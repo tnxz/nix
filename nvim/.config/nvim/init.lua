@@ -371,7 +371,7 @@ require("lazy").setup({
         {
           "<space>q",
           function()
-            require("snacks").bufdelete()
+            require("snacks").bufdelete({ force = true })
           end,
         },
         {
@@ -400,7 +400,7 @@ require("lazy").setup({
               confirm = function(picker, item)
                 picker:close()
                 if item then
-                  require("snacks").bufdelete.all()
+                  require("snacks").bufdelete.all({ force = true })
                   vim.cmd.cd("~/src/nix")
                   vim.schedule(function()
                     vim.cmd("edit " .. item.text)
@@ -468,7 +468,7 @@ require("lazy").setup({
               dev = "~/src",
               recent = false,
               confirm = function(picker)
-                require("snacks").bufdelete.all()
+                require("snacks").bufdelete.all({ force = true })
                 picker:action("load_session")
               end,
             },
