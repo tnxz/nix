@@ -545,6 +545,15 @@ require("lazy").setup({
                       )
                       vim.uv.fs_close(fd)
                     end
+                    if lang == "python" then
+                      local envrc = proj .. "/.envrc"
+                      local fd = vim.uv.fs_open(envrc, "w", 420)
+                      if not fd then
+                        return
+                      end
+                      vim.uv.fs_write(fd, "layout uv-venv")
+                      vim.uv.fs_close(fd)
+                    end
                     local files = {
                       rust = proj .. "/src/main.rs",
                       go = proj .. "/main.go",
