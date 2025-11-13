@@ -491,6 +491,11 @@ require("lazy").setup({
                     ["<c-x>"] = { "project_delete", mode = { "i", "n" } },
                   },
                 },
+                list = {
+                  keys = {
+                    ["dd"] = "project_delete",
+                  },
+                },
               },
               actions = {
                 picker_init_project = { action = "picker", source = "init_project" },
@@ -538,7 +543,7 @@ require("lazy").setup({
                       "go mod init %s && git init",
                       vim.fn.fnamemodify(proj, ":t")
                     ),
-                    python = "uv init",
+                    python = "uv init && uv venv",
                   }
                   local function run(cmd, cwd)
                     local full_cmd = string.format("cd %s && %s", vim.fn.fnameescape(cwd), cmd)
