@@ -622,7 +622,6 @@ require("lazy").setup({
             nix = { "alejandra" },
             python = { "ruff", "ruff_fix", "ruff_format", "ruff_organize_imports" },
             rust = { "rustfmt" },
-            toml = { "tombi" },
             yaml = { "yamlfmt" },
             zig = { "zigfmt" },
             ["_"] = { "trim_whitespace" },
