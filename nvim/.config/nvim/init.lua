@@ -411,6 +411,12 @@ require("lazy").setup({
           end,
         },
         {
+          "<space>e",
+          function()
+            require("snacks").picker.init_project()
+          end,
+        },
+        {
           "<space>v",
           function()
             require("snacks").picker.projects()
@@ -476,6 +482,82 @@ require("lazy").setup({
               confirm = function(picker)
                 require("snacks").bufdelete.all({ force = true })
                 picker:action("load_session")
+              end,
+              win = {
+                input = {
+                  keys = {
+                    ["n"] = { "picker_init_project", mode = { "n" } },
+                    ["<c-n>"] = { "picker_init_project", mode = { "i", "n" } },
+                  },
+                },
+              },
+              actions = { picker_init_project = { action = "picker", source = "init_project" } },
+            },
+            init_project = {
+              items = {
+                { text = "rust" },
+                { text = "python" },
+                { text = "go" },
+              },
+              format = "text",
+              layout = "dropdown",
+              confirm = function(picker, item)
+                picker:close()
+                if not item then
+                  return
+                end
+                local lang = type(item) == "table" and (item.text or item[1]) or tostring(item)
+                vim.ui.input({ prompt = "󱏒  " }, function(name)
+                  if not name or name == "" then
+                    vim.notify("Cancelled: no name provided", vim.log.levels.WARN)
+                    return
+                  end
+                  local proj = vim.fs.normalize("~/src/" .. name)
+                  vim.uv.fs_mkdir(vim.fs.normalize("~/src"), tonumber("755", 8))
+                  vim.uv.fs_mkdir(proj, tonumber("755", 8))
+                  local cmds = {
+                    rust = "cargo init",
+                    go = string.format(
+                      "go mod init %s && git init",
+                      vim.fn.fnamemodify(proj, ":t")
+                    ),
+                    python = "uv init",
+                  }
+                  local function run(cmd, cwd)
+                    local full_cmd = string.format("cd %s && %s", vim.fn.fnameescape(cwd), cmd)
+                    vim.fn.system(full_cmd)
+                    return vim.v.shell_error == 0
+                  end
+                  local ok = run(cmds[lang], proj)
+                  if ok then
+                    vim.notify(lang .. " project initialized successfully!")
+                    vim.cmd("cd " .. vim.fn.fnameescape(proj))
+                    require("snacks").bufdelete.all({ force = true })
+                    if lang == "go" then
+                      local main_go = proj .. "/main.go"
+                      local fd = vim.uv.fs_open(main_go, "w", 420)
+                      if not fd then
+                        return
+                      end
+                      vim.uv.fs_write(
+                        fd,
+                        'package main; import "fmt"; func main() { fmt.Println("src") }'
+                      )
+                      vim.uv.fs_close(fd)
+                    end
+                    local files = {
+                      rust = proj .. "/src/main.rs",
+                      go = proj .. "/main.go",
+                      python = proj .. "/main.py",
+                    }
+                    local path = files[lang]
+                    if path and vim.fn.filereadable(path) == 1 then
+                      vim.cmd("edit " .. vim.fn.fnameescape(path))
+                    end
+                  else
+                    vim.notify("Initialization failed!", vim.log.levels.ERROR)
+                  end
+                end)
               end,
             },
             explorer = { layout = "right", hidden = true },
