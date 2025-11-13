@@ -38,6 +38,31 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   end,
 })
 
+vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
+  group = vim.api.nvim_create_augroup("checktime", { clear = true }),
+  callback = function()
+    if vim.o.buftype ~= "nofile" then
+      vim.cmd("checktime")
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd("FileType", {
+  group = vim.api.nvim_create_augroup("man_quit", { clear = true }),
+  pattern = "man",
+  callback = function()
+    if not vim.tbl_contains(vim.v.argv, "+Man!") then
+      vim.keymap.set("n", "q", function()
+        if #vim.api.nvim_list_wins() > 1 then
+          vim.cmd("quit")
+        else
+          vim.cmd("bdelete")
+        end
+      end, { buffer = true })
+    end
+  end,
+})
+
 vim.api.nvim_create_autocmd("BufReadPost", {
   group = vim.api.nvim_create_augroup("restore_cursor", { clear = true }),
   callback = function(event)
@@ -296,7 +321,17 @@ require("lazy").setup({
       opts = { mappings = { toggle = "<space>m" } },
     },
 
-    { "nvim-mini/mini.pairs", event = "VeryLazy", opts = {} },
+    {
+      "nvim-mini/mini.pairs",
+      event = "VeryLazy",
+      opts = {
+        modes = { insert = true, command = true, terminal = false },
+        skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
+        skip_ts = { "string" },
+        skip_unbalanced = true,
+        markdown = true,
+      },
+    },
 
     { "nvim-mini/mini-git", event = "VeryLazy", main = "mini.git", opts = {} },
 
@@ -356,12 +391,6 @@ require("lazy").setup({
       lazy = false,
       priority = 1001,
       keys = {
-        {
-          "<space>b",
-          function()
-            require("snacks").picker.buffers()
-          end,
-        },
         {
           "<space>h",
           function()
@@ -423,12 +452,6 @@ require("lazy").setup({
           end,
         },
         {
-          "<space>u",
-          function()
-            require("snacks").picker.recent()
-          end,
-        },
-        {
           "<space>g",
           function()
             if require("snacks").git.get_root(vim.uv.cwd()) == nil then
@@ -439,21 +462,15 @@ require("lazy").setup({
           end,
         },
         {
-          "<space>n",
+          "<space>i",
           function()
-            require("snacks").win({
-              file = vim.api.nvim_get_runtime_file("doc/news.txt", false)[1],
-              width = 0.6,
-              height = 0.6,
-              wo = {
-                spell = false,
-                wrap = false,
-                signcolumn = "yes",
-                statuscolumn = " ",
-                conceallevel = 3,
-                winhighlight = "Normal:Pmenu",
-              },
-            })
+            require("snacks").picker.icons()
+          end,
+        },
+        {
+          "<space>u",
+          function()
+            require("snacks").picker.undo()
           end,
         },
       },
@@ -701,7 +718,7 @@ require("lazy").setup({
     {
       "folke/trouble.nvim",
       cmd = "Trouble",
-      keys = { { "<space>d", "<cmd>Trouble diagnostics toggle<cr>" } },
+      keys = { { "<space>x", "<cmd>Trouble diagnostics toggle<cr>" } },
       opts = {},
     },
 
