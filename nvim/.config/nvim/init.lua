@@ -488,10 +488,27 @@ require("lazy").setup({
                   keys = {
                     ["n"] = { "picker_init_project", mode = { "n" } },
                     ["<c-n>"] = { "picker_init_project", mode = { "i", "n" } },
+                    ["<c-x>"] = { "project_delete", mode = { "i", "n" } },
                   },
                 },
               },
-              actions = { picker_init_project = { action = "picker", source = "init_project" } },
+              actions = {
+                picker_init_project = { action = "picker", source = "init_project" },
+                project_delete = function(picker, item)
+                  local path = item.file
+                  if vim.uv.cwd() == path then
+                    vim.notify("🟥 Trash aborted : " .. path, vim.log.levels.ERROR)
+                    return
+                  end
+                  vim.fn.system({ "trash", vim.fn.fnameescape(path) })
+                  vim.notify(
+                    (vim.v.shell_error == 0 and "🗑️ Trashed: " or "🟥 Trash aborted: ")
+                      .. path,
+                    vim.v.shell_error == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
+                  )
+                  picker:refresh()
+                end,
+              },
             },
             init_project = {
               items = {
