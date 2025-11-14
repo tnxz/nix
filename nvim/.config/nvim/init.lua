@@ -3,14 +3,32 @@ for _, provider in ipairs(providers) do
   vim.g["loaded_" .. provider .. "_provider"] = 0
 end
 
-vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<cr>")
+vim.keymap.set({ "i", "n", "s" }, "<esc>", "<cmd>noh<CR><esc>")
 vim.keymap.set("n", "<left>", "<nop>")
 vim.keymap.set("n", "<right>", "<nop>")
 vim.keymap.set("n", "<up>", "<nop>")
 vim.keymap.set("n", "<down>", "<nop>")
 vim.keymap.set("n", "<tab>", "<C-w><C-w>")
 vim.keymap.set("n", "<space>r", "<cmd>restart<cr>")
-vim.keymap.set("n", "<space>w", "<cmd>write<cr>")
+vim.keymap.set("n", "<A-j>", "<cmd>execute 'move .+' . v:count1<cr>==")
+vim.keymap.set("n", "<A-k>", "<cmd>execute 'move .-' . (v:count1 + 1)<cr>==")
+vim.keymap.set("i", "<A-j>", "<esc><cmd>m .+1<cr>==gi")
+vim.keymap.set("i", "<A-k>", "<esc><cmd>m .-2<cr>==gi")
+vim.keymap.set("v", "<A-j>", ":<C-u>execute \"'<,'>move '>+\" . v:count1<cr>gv=gv")
+vim.keymap.set("v", "<A-k>", ":<C-u>execute \"'<,'>move '<-\" . (v:count1 + 1)<cr>gv=gv")
+vim.keymap.set("n", "<S-h>", "<cmd>bprevious<cr>")
+vim.keymap.set("n", "<S-l>", "<cmd>bnext<cr>")
+vim.keymap.set("n", "n", "'Nn'[v:searchforward].'zv'", { expr = true })
+vim.keymap.set("x", "n", "'Nn'[v:searchforward]", { expr = true })
+vim.keymap.set("o", "n", "'Nn'[v:searchforward]", { expr = true })
+vim.keymap.set("n", "N", "'nN'[v:searchforward].'zv'", { expr = true })
+vim.keymap.set("x", "N", "'nN'[v:searchforward]", { expr = true })
+vim.keymap.set("o", "N", "'nN'[v:searchforward]", { expr = true })
+vim.keymap.set({ "i", "x", "n", "s" }, "<D-s>", "<cmd>w<cr><esc>")
+vim.keymap.set("x", "<", "<gv")
+vim.keymap.set("x", ">", ">gv")
+vim.keymap.set("n", "gco", "o<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>")
+vim.keymap.set("n", "gcO", "O<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>")
 
 vim.diagnostic.config({ virtual_text = true })
 
@@ -311,6 +329,35 @@ require("lazy").setup({
       },
     },
 
+    {
+      "folke/flash.nvim",
+      event = "VeryLazy",
+      keys = {
+        {
+          "<space>n",
+          mode = { "n", "x", "o" },
+          function()
+            require("flash").jump()
+          end,
+        },
+        {
+          "<space>,",
+          mode = { "n", "x", "o" },
+          function()
+            require("flash").treesitter()
+          end,
+        },
+        {
+          "r",
+          mode = "o",
+          function()
+            require("flash").remote()
+          end,
+        },
+      },
+      opts = {},
+    },
+
     { "nvim-mini/mini.ai", event = "VeryLazy", opts = { silent = true } },
 
     { "nvim-mini/mini.icons", event = "VeryLazy", opts = {} },
@@ -371,14 +418,24 @@ require("lazy").setup({
         {
           "<space>y",
           function()
-            require("gitsigns").stage_hunk()
+            if vim.fn.mode() == "n" then
+              require("gitsigns").stage_hunk()
+            else
+              require("gitsigns").stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+            end
           end,
+          mode = { "n", "v" },
         },
         {
-          "<space>x",
+          "<space>d",
           function()
-            require("gitsigns").reset_hunk()
+            if vim.fn.mode() == "n" then
+              require("gitsigns").reset_hunk()
+            else
+              require("gitsigns").reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+            end
           end,
+          mode = { "n", "v" },
         },
       },
       opts = {},
