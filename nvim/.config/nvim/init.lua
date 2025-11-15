@@ -294,9 +294,9 @@ require("lazy").setup({
       "stevearc/oil.nvim",
       event = { "VimEnter */*,.*", "BufNew */*,.*" },
       cmd = "Oil",
-      keys = { { "-", "<cmd>Oil .<cr>" } },
+      keys = { { "-", "<cmd>Oil<cr>" }, { "_", "<cmd>Oil .<cr>" } },
       opts = {
-        keymaps = { ["`"] = false },
+        keymaps = { ["`"] = false, ["q"] = { "actions.close", mode = "n" } },
         view_options = {
           is_always_hidden = function(name, _)
             return name == ".." or name == ".git" or name == ".venv"
@@ -481,19 +481,23 @@ require("lazy").setup({
         {
           "<space>c",
           function()
-            require("snacks").picker.files({
-              cwd = "~/src/nix",
-              confirm = function(picker, item)
-                picker:close()
-                if item then
-                  require("snacks").bufdelete.all({ force = true })
-                  vim.cmd.cd("~/src/nix")
-                  vim.schedule(function()
-                    vim.cmd("edit " .. item.text)
-                  end)
-                end
-              end,
-            })
+            if vim.uv.cwd() == vim.fs.normalize("~/src/nix") then
+              require("snacks").picker.files()
+            else
+              require("snacks").picker.files({
+                cwd = "~/src/nix",
+                confirm = function(picker, item)
+                  picker:close()
+                  if item then
+                    require("snacks").bufdelete.all({ force = true })
+                    vim.cmd.cd("~/src/nix")
+                    vim.schedule(function()
+                      vim.cmd("edit " .. item.text)
+                    end)
+                  end
+                end,
+              })
+            end
           end,
         },
         {
