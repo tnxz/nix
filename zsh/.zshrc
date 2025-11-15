@@ -93,7 +93,6 @@ if (( $+commands[fzf] )); then
 fi
 
 if (( $+commands[nvim] )); then
-  export MANPAGER="nvim +Man!"
   export {EDITOR,VISUAL}="nvim"
   alias vimdiff="nvim -d"
   alias {vi,vim}="nvim"

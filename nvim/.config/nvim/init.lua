@@ -66,18 +66,18 @@ vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
 })
 
 vim.api.nvim_create_autocmd("FileType", {
-  group = vim.api.nvim_create_augroup("man_quit", { clear = true }),
-  pattern = "man",
+  group = vim.api.nvim_create_augroup("misc", { clear = true }),
+  pattern = { "man", "help" },
   callback = function()
-    if not vim.tbl_contains(vim.v.argv, "+Man!") then
-      vim.keymap.set("n", "q", function()
-        if #vim.api.nvim_list_wins() > 1 then
-          vim.cmd("quit")
-        else
-          vim.cmd("bdelete")
-        end
-      end, { buffer = true })
-    end
+    vim.opt_local.signcolumn = "no"
+    vim.opt_local.statuscolumn = ""
+    vim.keymap.set("n", "q", function()
+      if #vim.api.nvim_list_wins() > 1 then
+        vim.cmd("quit")
+      else
+        vim.cmd("bdelete")
+      end
+    end, { buffer = true })
   end,
 })
 
@@ -452,12 +452,6 @@ require("lazy").setup({
           "<space>h",
           function()
             require("snacks").picker.help()
-          end,
-        },
-        {
-          "<space>q",
-          function()
-            require("snacks").bufdelete({ force = true })
           end,
         },
         {
