@@ -4,10 +4,10 @@ for _, provider in ipairs(providers) do
 end
 
 vim.keymap.set({ "i", "n", "s" }, "<esc>", "<cmd>noh<CR><esc>")
-vim.keymap.set("n", "<left>", "<nop>")
-vim.keymap.set("n", "<right>", "<nop>")
-vim.keymap.set("n", "<up>", "<nop>")
-vim.keymap.set("n", "<down>", "<nop>")
+vim.keymap.set({ "", "!", "t" }, "<left>", "<nop>")
+vim.keymap.set({ "", "!", "t" }, "<right>", "<nop>")
+vim.keymap.set({ "", "!", "t" }, "<up>", "<nop>")
+vim.keymap.set({ "", "!", "t" }, "<down>", "<nop>")
 vim.keymap.set("n", "<tab>", "<C-w><C-w>")
 vim.keymap.set("n", "<space>r", "<cmd>restart<cr>")
 vim.keymap.set("n", "<A-j>", "<cmd>execute 'move .+' . v:count1<cr>==")
@@ -534,6 +534,8 @@ require("lazy").setup({
       opts = {
         bigfile = { enabled = true },
         quickfile = { enabled = true },
+        words = { enabled = true },
+        statuscolumn = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
         terminal = { win = { position = "float", height = 0, width = 0 }, shell = "/bin/zsh -il" },
         notifier = {
