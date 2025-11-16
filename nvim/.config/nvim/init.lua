@@ -10,6 +10,7 @@ vim.keymap.set({ "n", "v", "t" }, "<up>", "<nop>")
 vim.keymap.set({ "n", "v", "t" }, "<down>", "<nop>")
 vim.keymap.set("n", "<tab>", "<C-w><C-w>")
 vim.keymap.set("n", "<space>r", "<cmd>restart<cr>")
+vim.keymap.set("n", "<space><space>", "<cmd>write<cr>")
 vim.keymap.set("n", "<A-j>", "<cmd>execute 'move .+' . v:count1<cr>==")
 vim.keymap.set("n", "<A-k>", "<cmd>execute 'move .-' . (v:count1 + 1)<cr>==")
 vim.keymap.set("i", "<A-j>", "<esc><cmd>m .+1<cr>==gi")
@@ -37,11 +38,13 @@ vim.cmd({
   args = {
     "nosc", "nosmd", "noswf", "nowb", "nowrap", "ph=10", "noru",
     "ch=0", "et", "fcs=eob:\\ ,vert:\\ ", "ic", "scs", "mouse=",
-    "shm+=IW", "sb", "ts=2", "sw=2", "scl=no", "ls=0", "stal=0",
-    "spr", "so=7", "ve=block", "udf"
+    "shm+=I", "sb", "ts=2", "sw=2", "scl=yes", "ls=0", "stal=0",
+    "spr", "so=7", "ve=block", "udf", "nu", "rnu", "cul"
   },
   cmd = "set",
 })
+
+require("vim._extui").enable({ enable = true, msg = { target = "msg", timeout = 4000 } })
 
 vim.g.clipboard = "pbcopy"
 
@@ -69,6 +72,8 @@ vim.api.nvim_create_autocmd("FileType", {
   group = vim.api.nvim_create_augroup("misc", { clear = true }),
   pattern = { "man", "help" },
   callback = function()
+    vim.opt_local.statuscolumn = ""
+    vim.opt_local.signcolumn = "no"
     vim.keymap.set("n", "q", function()
       if #vim.api.nvim_list_wins() > 1 then
         vim.cmd("quit")
@@ -226,6 +231,9 @@ require("tokyonight").setup({
     keywords = { italic = false },
   },
   style = "night",
+  on_highlights = function(hl, _)
+    hl.CursorLine = { bg = "#16161e" }
+  end,
 })
 require("tokyonight").load()
 
@@ -249,41 +257,6 @@ require("lazy").setup({
   spec = {
 
     { "folke/tokyonight.nvim", priority = 1000 },
-
-    {
-      "folke/noice.nvim",
-      dependencies = { "MunifTanjim/nui.nvim" },
-      event = "VeryLazy",
-      opts = {
-        lsp = {
-          override = {
-            ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
-            ["vim.lsp.util.stylize_markdown"] = true,
-            ["cmp.entry.get_documentation"] = true,
-          },
-        },
-        cmdline = {
-          format = {
-            cmdline = { icon = "", conceal = true },
-            search_down = { icon = " /", conceal = true },
-            search_up = { icon = " ?", conceal = true },
-            filter = false,
-            lua = false,
-            help = false,
-            input = { view = "cmdline_popup" },
-          },
-        },
-        views = {
-          cmdline_popup = {
-            border = "none",
-            position = { row = 5, col = "50%" },
-            size = { width = 60, height = "auto" },
-            win_options = { winhighlight = { Normal = "Pmenu" } },
-          },
-          popupmenu = { enabled = false },
-        },
-      },
-    },
 
     {
       "stevearc/oil.nvim",
@@ -336,13 +309,6 @@ require("lazy").setup({
           end,
         },
         {
-          "<space>,",
-          mode = { "n", "x", "o" },
-          function()
-            require("flash").treesitter()
-          end,
-        },
-        {
           "r",
           mode = "o",
           function()
@@ -357,11 +323,7 @@ require("lazy").setup({
 
     { "nvim-mini/mini.icons", event = "VeryLazy", opts = {} },
 
-    {
-      "nvim-mini/mini.splitjoin",
-      event = "VeryLazy",
-      opts = { mappings = { toggle = "<space>m" } },
-    },
+    { "nvim-mini/mini.splitjoin", event = "VeryLazy", opts = { mappings = { toggle = "gj" } } },
 
     {
       "nvim-mini/mini.pairs",
@@ -411,7 +373,7 @@ require("lazy").setup({
           end,
         },
         {
-          "<space>y",
+          "gy",
           function()
             if vim.fn.mode() == "n" then
               require("gitsigns").stage_hunk()
@@ -422,7 +384,7 @@ require("lazy").setup({
           mode = { "n", "v" },
         },
         {
-          "<space>d",
+          "ge",
           function()
             if vim.fn.mode() == "n" then
               require("gitsigns").reset_hunk()
@@ -444,9 +406,27 @@ require("lazy").setup({
       priority = 1001,
       keys = {
         {
+          "<space>,",
+          function()
+            require("snacks").picker.buffers()
+          end,
+        },
+        {
           "<space>h",
           function()
             require("snacks").picker.help()
+          end,
+        },
+        {
+          "<space>d",
+          function()
+            require("snacks").bufdelete({ force = true })
+          end,
+        },
+        {
+          "<space>q",
+          function()
+            require("snacks").bufdelete.all({ force = true })
           end,
         },
         {
@@ -490,15 +470,9 @@ require("lazy").setup({
           end,
         },
         {
-          "<space>e",
-          function()
-            require("snacks").picker.init_project()
-          end,
-        },
-        {
           "<space>v",
           function()
-            require("snacks").picker.projects()
+            require("snacks").picker.project()
           end,
         },
         {
@@ -533,14 +507,10 @@ require("lazy").setup({
       opts = {
         bigfile = { enabled = true },
         quickfile = { enabled = true },
+        statuscolumn = { enabled = true },
         words = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
         terminal = { win = { position = "float", height = 0, width = 0 }, shell = "/bin/zsh -il" },
-        notifier = {
-          enabled = true,
-          style = "minimal",
-          icons = { error = "", warn = "", info = "", debug = "", trace = "" },
-        },
         explorer = { replace_netrw = true },
         picker = {
           sources = {
@@ -553,6 +523,19 @@ require("lazy").setup({
             git_diff = {
               focus = "list",
               win = { list = { keys = { ["<Tab>"] = "git_stage", ["dd"] = "git_restore" } } },
+            },
+            project = {
+              items = { { text = "new" }, { text = "recent" } },
+              format = "text",
+              layout = "dropdown",
+              confirm = function(picker, item)
+                picker:close()
+                if item.text == "new" then
+                  require("snacks").picker.init_project()
+                elseif item.text == "recent" then
+                  require("snacks").picker.projects()
+                end
+              end,
             },
             projects = {
               dev = "~/src",
@@ -569,11 +552,7 @@ require("lazy").setup({
                     ["<c-x>"] = { "project_delete", mode = { "i", "n" } },
                   },
                 },
-                list = {
-                  keys = {
-                    ["dd"] = "project_delete",
-                  },
-                },
+                list = { keys = { ["dd"] = "project_delete" } },
               },
               actions = {
                 picker_init_project = { action = "picker", source = "init_project" },
