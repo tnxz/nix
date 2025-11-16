@@ -37,8 +37,8 @@ vim.cmd({
   args = {
     "nosc", "nosmd", "noswf", "nowb", "nowrap", "ph=10", "noru",
     "ch=0", "et", "fcs=eob:\\ ,vert:\\ ", "ic", "scs", "mouse=",
-    "shm+=I", "sb", "ts=2", "sw=2", "scl=yes", "ls=0", "stal=0",
-    "spr", "so=7", "ve=block", "cul", "udf", "nu", "rnu"
+    "shm+=IW", "sb", "ts=2", "sw=2", "scl=no", "ls=0", "stal=0",
+    "spr", "so=7", "ve=block", "udf"
   },
   cmd = "set",
 })
@@ -69,8 +69,6 @@ vim.api.nvim_create_autocmd("FileType", {
   group = vim.api.nvim_create_augroup("misc", { clear = true }),
   pattern = { "man", "help" },
   callback = function()
-    vim.opt_local.signcolumn = "no"
-    vim.opt_local.statuscolumn = ""
     vim.keymap.set("n", "q", function()
       if #vim.api.nvim_list_wins() > 1 then
         vim.cmd("quit")
@@ -228,9 +226,6 @@ require("tokyonight").setup({
     keywords = { italic = false },
   },
   style = "night",
-  on_highlights = function(hl, _)
-    hl.CursorLine = { bg = "#16161e" }
-  end,
 })
 require("tokyonight").load()
 
@@ -517,6 +512,12 @@ require("lazy").setup({
           end,
         },
         {
+          "<space>z",
+          function()
+            require("snacks").picker.zoxide()
+          end,
+        },
+        {
           "<space>i",
           function()
             require("snacks").picker.icons()
@@ -533,7 +534,6 @@ require("lazy").setup({
         bigfile = { enabled = true },
         quickfile = { enabled = true },
         words = { enabled = true },
-        statuscolumn = { enabled = true },
         lazygit = { win = { position = "float", height = 0, width = 0 } },
         terminal = { win = { position = "float", height = 0, width = 0 }, shell = "/bin/zsh -il" },
         notifier = {
@@ -550,6 +550,10 @@ require("lazy").setup({
             icons = { layout = "dropdown" },
             spelling = { layout = "dropdown" },
             files = { hidden = true },
+            git_diff = {
+              focus = "list",
+              win = { list = { keys = { ["<Tab>"] = "git_stage", ["dd"] = "git_restore" } } },
+            },
             projects = {
               dev = "~/src",
               recent = false,
@@ -684,6 +688,7 @@ require("lazy").setup({
               return { preset = "default" }
             end
           end,
+          previewers = { diff = { style = "syntax", wo = { wrap = false } } },
           layouts = {
             default = {
               layout = {
@@ -726,6 +731,7 @@ require("lazy").setup({
                 box = "vertical",
                 { win = "list" },
                 { win = "input", height = 1 },
+                { win = "preview" },
               },
             },
             select = {
@@ -767,8 +773,65 @@ require("lazy").setup({
       keys = { "`" },
       opts = {
         open_mapping = [[`]],
-        direction = "tab",
+        direction = "float",
         shell = vim.o.shell .. " -il",
+        float_opts = {
+          border = "none",
+          width = vim.o.columns,
+          height = math.floor(0.4 * vim.o.lines),
+          row = math.floor(0.7 * vim.o.lines),
+          col = 0,
+        },
+      },
+    },
+
+    {
+      "CRAG666/code_runner.nvim",
+      keys = { { "<space>b", "<cmd>RunCode<cr>", mode = { "v", "n" } } },
+      opts = {
+        startinsert = true,
+        before_run_filetype = function()
+          vim.cmd.write()
+        end,
+        filetype = {
+          c = "clang $file && ./a.out && rm a.out",
+          cpp = "clang++ $file && ./a.out && rm a.out",
+          go = "go run",
+          java = "java $fileName",
+          javascript = "bun run",
+          python = "uv run",
+          rust = "cargo run",
+          typescript = "bun run",
+          zig = "zig run",
+          dockerfile = function()
+            require("code_runner.hooks.ui").select({
+              build = function()
+                require("code_runner.commands").run_from_fn([[]])
+              end,
+              run = function()
+                require("code_runner.commands").run_from_fn([[]])
+              end,
+              launch = function()
+                require("code_runner.commands").run_from_fn([[
+                  if docker ps --filter "name=$(basename "$dir")" --format '{{.Names}}' | grep -w $(basename "$dir") > /dev/null 2>&1; then
+                    open "https://$(basename $dir).orb.local"
+                  fi
+                ]])
+              end,
+              rebuild = function()
+                require("code_runner.commands").run_from_fn([[
+                  docker build -t $(basename "$dir") "$dir"
+                  if docker ps --filter "name=$(basename "$dir")" --format '{{.Names}}' | grep -w $(basename "$dir") > /dev/null 2>&1; then
+                    echo "Container $(basename "$dir") is already running. Stopping it..."
+                    docker stop $(basename "$dir")
+                  fi
+                  docker run -d --name $(basename "$dir") -it --rm $(basename "$dir")
+                  open "https://$(basename "$dir").orb.local"
+                ]])
+              end,
+            })
+          end,
+        },
       },
     },
 
