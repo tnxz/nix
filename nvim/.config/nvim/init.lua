@@ -39,12 +39,10 @@ vim.cmd({
     "nosc", "nosmd", "noswf", "nowb", "nowrap", "ph=10", "noru",
     "ch=0", "et", "fcs=eob:\\ ,vert:\\ ", "ic", "scs", "mouse=",
     "shm+=I", "sb", "ts=2", "sw=2", "scl=yes", "ls=0", "stal=0",
-    "spr", "so=7", "ve=block", "udf", "nu", "rnu", "cul"
+    "spr", "so=7", "ve=block", "udf", "nu", "rnu", "spk=screen",
   },
   cmd = "set",
 })
-
-require("vim._extui").enable({ enable = true, msg = { target = "msg", timeout = 4000 } })
 
 vim.g.clipboard = "pbcopy"
 
@@ -55,16 +53,7 @@ end)
 vim.api.nvim_create_autocmd("TextYankPost", {
   group = vim.api.nvim_create_augroup("highlight_yank", { clear = true }),
   callback = function()
-    vim.highlight.on_yank()
-  end,
-})
-
-vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
-  group = vim.api.nvim_create_augroup("checktime", { clear = true }),
-  callback = function()
-    if vim.o.buftype ~= "nofile" then
-      vim.cmd("checktime")
-    end
+    vim.hl.on_yank()
   end,
 })
 
@@ -132,87 +121,6 @@ vim.api.nvim_create_autocmd({ "BufUnload", "BufDelete" }, {
   end,
 })
 
-vim.api.nvim_create_autocmd("TermOpen", {
-  group = vim.api.nvim_create_augroup("term_esc", { clear = true }),
-  callback = function()
-    local esc_timer
-    vim.keymap.set("t", "<esc>", function()
-      esc_timer = esc_timer or vim.uv.new_timer()
-      if esc_timer == nil then
-        return
-      end
-      if esc_timer:is_active() then
-        esc_timer:stop()
-        return [[<c-\><c-n>]]
-      else
-        esc_timer:start(200, 0, function() end)
-        return "<esc>"
-      end
-    end, { expr = true })
-  end,
-})
-
-vim.api.nvim_create_autocmd({ "TermRequest" }, {
-  group = vim.api.nvim_create_augroup("term_osc7", { clear = true }),
-  callback = function(ev)
-    local val, n = string.gsub(ev.data.sequence, "\027]7;file://[^/]*", "")
-    if n > 0 then
-      local dir = val
-      if vim.fn.isdirectory(dir) == 0 then
-        vim.notify("invalid dir: " .. dir)
-        return
-      end
-      vim.b[ev.buf].osc7_dir = dir
-      if vim.api.nvim_get_current_buf() == ev.buf then
-        vim.cmd.cd(dir)
-      end
-    end
-  end,
-})
-
-vim.api.nvim_create_autocmd("DirChanged", {
-  group = vim.api.nvim_create_augroup("term_cwd_sync", { clear = true }),
-  callback = function()
-    local cwd = (vim.uv or vim.loop).cwd()
-    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-      if not vim.api.nvim_buf_is_loaded(buf) then
-        goto continue
-      end
-      if vim.bo[buf].buftype ~= "terminal" then
-        goto continue
-      end
-      local id = vim.b[buf].terminal_job_id
-      local pid = vim.b[buf].terminal_job_pid
-      if not id or not pid then
-        goto continue
-      end
-      if vim.fn.jobwait({ id }, 0)[1] ~= -1 then
-        goto continue
-      end
-      local parent_cmd = vim.trim(vim.fn.system("ps -p " .. pid .. " -o comm="))
-      if not parent_cmd:match("zsh") then
-        goto continue
-      end
-      local child_pids = vim.fn.systemlist("pgrep -P " .. pid)
-      if #child_pids == 1 and child_pids[1] == "" then
-        child_pids = {}
-      end
-      if #child_pids > 0 then
-        goto continue
-      end
-      vim.schedule(function()
-        vim.api.nvim_chan_send(id, "\x1b")
-        vim.api.nvim_chan_send(id, "0D")
-        vim.api.nvim_chan_send(id, "i")
-        vim.api.nvim_chan_send(id, vim.api.nvim_replace_termcodes("<C-e>", true, false, true))
-        vim.api.nvim_chan_send(id, vim.api.nvim_replace_termcodes("<C-u>", true, false, true))
-        vim.api.nvim_chan_send(id, "cd '" .. cwd .. "'\r")
-      end)
-      ::continue::
-    end
-  end,
-})
-
 local tokyopath = vim.fn.stdpath("data") .. "/lazy/tokyonight.nvim"
 local tokyorepo = "https://github.com/folke/tokyonight.nvim.git"
 if not (vim.uv or vim.loop).fs_stat(tokyopath) then
@@ -231,9 +139,6 @@ require("tokyonight").setup({
     keywords = { italic = false },
   },
   style = "night",
-  on_highlights = function(hl, _)
-    hl.CursorLine = { bg = "#16161e" }
-  end,
 })
 require("tokyonight").load()
 
@@ -257,6 +162,62 @@ require("lazy").setup({
   spec = {
 
     { "folke/tokyonight.nvim", priority = 1000 },
+
+    {
+      "folke/noice.nvim",
+      dependencies = { "MunifTanjim/nui.nvim" },
+      event = "VeryLazy",
+      opts = {
+        lsp = {
+          signature = { enabled = false },
+          override = {
+            ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+            ["vim.lsp.util.stylize_markdown"] = true,
+            ["cmp.entry.get_documentation"] = true,
+          },
+        },
+        cmdline = {
+          format = {
+            cmdline = { icon = "", conceal = true },
+            search_down = { icon = " /", conceal = true },
+            search_up = { icon = " ?", conceal = true },
+            filter = false,
+            lua = false,
+            help = false,
+            input = { view = "cmdline_popup" },
+          },
+        },
+        views = {
+          cmdline_popup = {
+            border = "none",
+            position = { row = 5, col = "50%" },
+            size = { width = 60, height = "auto" },
+            win_options = { winhighlight = { Normal = "Pmenu" } },
+          },
+          popupmenu = { enabled = false },
+          split = { enter = true, merge = true },
+        },
+        routes = {
+          {
+            filter = { event = "msg_show", min_height = 4 },
+            view = "split",
+          },
+          {
+            filter = {
+              event = "msg_show",
+              any = {
+                { find = "%d+L, %d+B" },
+                { find = "; after #%d+" },
+                { find = "; before #%d+" },
+                { find = "written" },
+                { find = "yanked" },
+              },
+            },
+            view = "mini",
+          },
+        },
+      },
+    },
 
     {
       "stevearc/oil.nvim",
@@ -503,75 +464,30 @@ require("lazy").setup({
             require("snacks").picker.undo()
           end,
         },
+        {
+          "`",
+          function()
+            require("snacks").terminal.toggle()
+          end,
+          mode = { "n", "t" },
+        },
       },
       opts = {
         bigfile = { enabled = true },
+        lazygit = { win = { position = "bottom", height = 0, width = 0, style = "minimal" } },
         quickfile = { enabled = true },
         statuscolumn = { enabled = true },
+        terminal = {
+          win = { position = "bottom", height = 0, width = 0, style = "minimal" },
+          shell = "/bin/zsh -il",
+        },
         words = { enabled = true },
-        lazygit = { win = { position = "float", height = 0, width = 0 } },
-        terminal = { win = { position = "float", height = 0, width = 0 }, shell = "/bin/zsh -il" },
-        explorer = { replace_netrw = true },
         picker = {
+          prompt = "",
           sources = {
-            command_history = { layout = "dropdown" },
-            lines = { layout = "right" },
-            search_history = { layout = "dropdown" },
-            icons = { layout = "dropdown" },
-            spelling = { layout = "dropdown" },
+            explorer = { hidden = true },
             files = { hidden = true },
-            git_diff = {
-              focus = "list",
-              win = { list = { keys = { ["<Tab>"] = "git_stage", ["dd"] = "git_restore" } } },
-            },
-            project = {
-              items = { { text = "new" }, { text = "recent" } },
-              format = "text",
-              layout = "dropdown",
-              confirm = function(picker, item)
-                picker:close()
-                if item.text == "new" then
-                  require("snacks").picker.init_project()
-                elseif item.text == "recent" then
-                  require("snacks").picker.projects()
-                end
-              end,
-            },
-            projects = {
-              dev = "~/src",
-              recent = false,
-              confirm = function(picker)
-                require("snacks").bufdelete.all({ force = true })
-                picker:action("load_session")
-              end,
-              win = {
-                input = {
-                  keys = {
-                    ["n"] = { "picker_init_project", mode = { "n" } },
-                    ["<c-n>"] = { "picker_init_project", mode = { "i", "n" } },
-                    ["<c-x>"] = { "project_delete", mode = { "i", "n" } },
-                  },
-                },
-                list = { keys = { ["dd"] = "project_delete" } },
-              },
-              actions = {
-                picker_init_project = { action = "picker", source = "init_project" },
-                project_delete = function(picker, item)
-                  local path = item.file
-                  if vim.uv.cwd() == path then
-                    vim.notify("🟥 Trash aborted : " .. path, vim.log.levels.ERROR)
-                    return
-                  end
-                  vim.fn.system({ "trash", vim.fn.fnameescape(path) })
-                  vim.notify(
-                    (vim.v.shell_error == 0 and "🗑️ Trashed: " or "🟥 Trash aborted: ")
-                      .. path,
-                    vim.v.shell_error == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
-                  )
-                  picker:refresh()
-                end,
-              },
-            },
+            grep = { hidden = true },
             init_project = {
               items = {
                 { text = "rust" },
@@ -648,8 +564,54 @@ require("lazy").setup({
                 end)
               end,
             },
-            explorer = { layout = "right", hidden = true },
-            grep = { hidden = true },
+            project = {
+              items = { { text = "new" }, { text = "recent" } },
+              format = "text",
+              layout = "dropdown",
+              confirm = function(picker, item)
+                picker:close()
+                if item.text == "new" then
+                  require("snacks").picker.init_project()
+                elseif item.text == "recent" then
+                  require("snacks").picker.projects()
+                end
+              end,
+            },
+            projects = {
+              dev = "~/src",
+              recent = false,
+              confirm = function(picker)
+                require("snacks").bufdelete.all({ force = true })
+                picker:action("load_session")
+              end,
+              win = {
+                input = {
+                  keys = {
+                    ["n"] = { "picker_init_project", mode = { "n" } },
+                    ["<c-n>"] = { "picker_init_project", mode = { "i", "n" } },
+                    ["<c-x>"] = { "project_delete", mode = { "i", "n" } },
+                  },
+                },
+                list = { keys = { ["dd"] = "project_delete" } },
+              },
+              actions = {
+                picker_init_project = { action = "picker", source = "init_project" },
+                project_delete = function(picker, item)
+                  local path = item.file
+                  if vim.uv.cwd() == path then
+                    vim.notify("🟥 Trash aborted : " .. path, vim.log.levels.ERROR)
+                    return
+                  end
+                  vim.fn.system({ "trash", vim.fn.fnameescape(path) })
+                  vim.notify(
+                    (vim.v.shell_error == 0 and "🗑️ Trashed: " or "🟥 Trash aborted: ")
+                      .. path,
+                    vim.v.shell_error == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
+                  )
+                  picker:refresh()
+                end,
+              },
+            },
           },
           win = {
             input = {
@@ -670,6 +632,7 @@ require("lazy").setup({
           previewers = { diff = { style = "syntax", wo = { wrap = false } } },
           layouts = {
             default = {
+              cycle = true,
               layout = {
                 width = 0.8,
                 min_width = 120,
@@ -685,6 +648,7 @@ require("lazy").setup({
               },
             },
             dropdown = {
+              cycle = true,
               preview = false,
               layout = {
                 width = 70,
@@ -700,13 +664,13 @@ require("lazy").setup({
               },
             },
             sidebar = {
+              cycle = true,
               preview = "main",
               layout = {
-                backdrop = false,
                 width = 40,
                 min_width = 40,
                 height = 0,
-                position = "left",
+                position = "right",
                 box = "vertical",
                 { win = "list" },
                 { win = "input", height = 1 },
@@ -714,102 +678,95 @@ require("lazy").setup({
               },
             },
             select = {
+              cycle = true,
               preview = false,
               layout = {
-                backdrop = false,
                 width = 0.5,
                 min_width = 80,
                 height = 0.4,
-                min_height = 3,
                 box = "vertical",
                 border = "single",
                 { win = "input", height = 1, border = "bottom" },
                 { win = "list", border = "none" },
               },
             },
+            telescope = {
+              cycle = true,
+              reverse = false,
+              layout = {
+                width = 0.8,
+                min_width = 120,
+                height = 0.8,
+                box = "horizontal",
+                {
+                  box = "vertical",
+                  border = "single",
+                  { win = "input", height = 1, border = "bottom" },
+                  { win = "list" },
+                },
+                { win = "preview", title = "", border = "single", width = 0.5 },
+              },
+            },
+            ivy = {
+              cycle = true,
+              layout = {
+                box = "vertical",
+                height = 0.4,
+                position = "bottom",
+                { win = "input", height = 1 },
+                {
+                  box = "horizontal",
+                  { win = "list" },
+                  { win = "preview", width = 0.6 },
+                },
+              },
+            },
+            ivy_split = {
+              preview = "main",
+              cycle = true,
+              layout = {
+                width = 0,
+                height = 0.4,
+                position = "bottom",
+                box = "vertical",
+                { win = "input", height = 1 },
+                { win = "list" },
+                { win = "preview" },
+              },
+            },
+            vscode = {
+              cycle = true,
+              hidden = { "preview" },
+              layout = {
+                width = 70,
+                min_width = 70,
+                height = 0.8,
+                box = "vertical",
+                {
+                  box = "vertical",
+                  border = "single",
+                  { win = "input", height = 1, border = "bottom" },
+                  { win = "list" },
+                },
+              },
+            },
+            vertical = {
+              cycle = true,
+              layout = {
+                preview = false,
+                width = 70,
+                min_width = 70,
+                height = 0.8,
+                box = "vertical",
+                {
+                  box = "vertical",
+                  border = "single",
+                  { win = "input", height = 1, border = "bottom" },
+                  { win = "list" },
+                },
+              },
+            },
           },
-        },
-      },
-    },
-
-    {
-      "willothy/flatten.nvim",
-      dependencies = { "akinsho/toggleterm.nvim" },
-      lazy = false,
-      opts = {
-        window = { open = "alternate" },
-        hooks = {
-          pre_open = function()
-            vim.cmd.ToggleTerm()
-          end,
-        },
-      },
-    },
-
-    {
-      "akinsho/toggleterm.nvim",
-      cmd = "ToggleTerm",
-      keys = { "`" },
-      opts = {
-        open_mapping = [[`]],
-        direction = "float",
-        shell = vim.o.shell .. " -il",
-        float_opts = {
-          border = "none",
-          width = vim.o.columns,
-          height = math.floor(0.4 * vim.o.lines),
-          row = math.floor(0.7 * vim.o.lines),
-          col = 0,
-        },
-      },
-    },
-
-    {
-      "CRAG666/code_runner.nvim",
-      keys = { { "<space>b", "<cmd>RunCode<cr>", mode = { "v", "n" } } },
-      opts = {
-        startinsert = true,
-        before_run_filetype = function()
-          vim.cmd.write()
-        end,
-        filetype = {
-          c = "clang $file && ./a.out && rm a.out",
-          cpp = "clang++ $file && ./a.out && rm a.out",
-          go = "go run",
-          java = "java $fileName",
-          javascript = "bun run",
-          python = "uv run",
-          rust = "cargo run",
-          typescript = "bun run",
-          zig = "zig run",
-          dockerfile = function()
-            require("code_runner.hooks.ui").select({
-              build = function()
-                require("code_runner.commands").run_from_fn([[]])
-              end,
-              run = function()
-                require("code_runner.commands").run_from_fn([[]])
-              end,
-              launch = function()
-                require("code_runner.commands").run_from_fn([[
-                  if docker ps --filter "name=$(basename "$dir")" --format '{{.Names}}' | grep -w $(basename "$dir") > /dev/null 2>&1; then
-                    open "https://$(basename $dir).orb.local"
-                  fi
-                ]])
-              end,
-              rebuild = function()
-                require("code_runner.commands").run_from_fn([[
-                  docker build -t $(basename "$dir") "$dir"
-                  if docker ps --filter "name=$(basename "$dir")" --format '{{.Names}}' | grep -w $(basename "$dir") > /dev/null 2>&1; then
-                    echo "Container $(basename "$dir") is already running. Stopping it..."
-                    docker stop $(basename "$dir")
-                  fi
-                  docker run -d --name $(basename "$dir") -it --rm $(basename "$dir")
-                  open "https://$(basename "$dir").orb.local"
-                ]])
-              end,
-            })
-          end,
         },
       },
     },
@@ -873,13 +830,12 @@ require("lazy").setup({
       end,
     },
 
+    { "kawre/neotab.nvim", event = "InsertEnter", opts = {} },
+
     {
       "Saghen/blink.cmp",
-      version = "1.*",
-      dependencies = {
-        "rafamadriz/friendly-snippets",
-        { "kawre/neotab.nvim", event = "InsertEnter", opts = {} },
-      },
+      version = "*",
+      dependencies = { "rafamadriz/friendly-snippets" },
       event = "InsertEnter",
       opts = {
         appearance = { nerd_font_variant = "normal" },
@@ -887,29 +843,19 @@ require("lazy").setup({
           preset = "enter",
           ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
           ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
+          ["<Esc>"] = { "hide", "fallback" },
         },
         completion = {
-          menu = {
-            draw = {
-              columns = { { "label", "label_description", gap = 1 }, { "kind_icon", "kind" } },
-            },
-            border = "single",
-          },
-          list = { selection = { preselect = false } },
-          documentation = {
-            auto_show = true,
-            auto_show_delay_ms = 0,
-            window = { border = "single" },
-          },
+          menu = { draw = { columns = { { "label", gap = 1 }, { "kind_icon", "kind" } } } },
+          list = { selection = { preselect = false, auto_insert = false } },
+          documentation = { auto_show = true, auto_show_delay_ms = 0 },
         },
-        signature = { window = { border = "single" } },
         cmdline = { enabled = false },
         sources = {
           default = { "lsp", "path", "snippets", "buffer" },
-          providers = {
-            lsp = { fallbacks = {} },
-          },
+          providers = { lsp = { fallbacks = {} } },
         },
+        signature = { enabled = true },
       },
       init = function()
         vim.lsp.config("*", { capabilities = require("blink.cmp").get_lsp_capabilities() })
