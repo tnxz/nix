@@ -161,7 +161,27 @@ require("lazy").setup({
   default = { lazy = true },
   spec = {
 
-    { "folke/tokyonight.nvim", priority = 1000 },
+    {
+      "folke/flash.nvim",
+      event = "VeryLazy",
+      keys = {
+        {
+          "<space>n",
+          mode = { "n", "x", "o" },
+          function()
+            require("flash").jump()
+          end,
+        },
+        {
+          "r",
+          mode = "o",
+          function()
+            require("flash").remote()
+          end,
+        },
+      },
+      opts = {},
+    },
 
     {
       "folke/noice.nvim",
@@ -217,146 +237,6 @@ require("lazy").setup({
           },
         },
       },
-    },
-
-    {
-      "stevearc/oil.nvim",
-      event = { "VimEnter */*,.*", "BufNew */*,.*" },
-      cmd = "Oil",
-      keys = { { "-", "<cmd>Oil<cr>" }, { "_", "<cmd>Oil .<cr>" } },
-      opts = {
-        keymaps = { ["`"] = false, ["q"] = { "actions.close", mode = "n" } },
-        view_options = {
-          is_always_hidden = function(name, _)
-            return name == ".." or name == ".git" or name == ".venv"
-          end,
-          show_hidden = true,
-        },
-        delete_to_trash = true,
-        float = { border = "single" },
-        confirmation = { border = "single" },
-        progress = { border = "single" },
-        ssh = { border = "single" },
-        keymaps_help = { border = "single" },
-      },
-    },
-
-    {
-      "nvim-mini/mini.surround",
-      event = "VeryLazy",
-      opts = {
-        mappings = {
-          find_left = "gsF",
-          highlight = "gsh",
-          add = "gsa",
-          replace = "gsr",
-          find = "gsf",
-          delete = "gsd",
-          update_n_lines = "gsn",
-        },
-        silent = true,
-      },
-    },
-
-    {
-      "folke/flash.nvim",
-      event = "VeryLazy",
-      keys = {
-        {
-          "<space>n",
-          mode = { "n", "x", "o" },
-          function()
-            require("flash").jump()
-          end,
-        },
-        {
-          "r",
-          mode = "o",
-          function()
-            require("flash").remote()
-          end,
-        },
-      },
-      opts = {},
-    },
-
-    { "nvim-mini/mini.ai", event = "VeryLazy", opts = { silent = true } },
-
-    { "nvim-mini/mini.icons", event = "VeryLazy", opts = {} },
-
-    { "nvim-mini/mini.splitjoin", event = "VeryLazy", opts = { mappings = { toggle = "gj" } } },
-
-    {
-      "nvim-mini/mini.pairs",
-      event = "VeryLazy",
-      opts = {
-        modes = { insert = true, command = true, terminal = false },
-        skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
-        skip_ts = { "string" },
-        skip_unbalanced = true,
-        markdown = true,
-      },
-    },
-
-    { "nvim-mini/mini-git", event = "VeryLazy", main = "mini.git", opts = {} },
-
-    {
-      "lewis6991/gitsigns.nvim",
-      event = "VeryLazy",
-      keys = {
-        {
-          "<space>t",
-          function()
-            if not vim.wo.diff then
-              require("gitsigns").diffthis("", { split = "rightbelow" })
-            end
-            for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-              if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(w)):find("^gitsigns://") then
-                return vim.schedule(function()
-                  vim.api.nvim_win_close(w, true)
-                end)
-              end
-            end
-          end,
-        },
-        {
-          "<space>k",
-          function()
-            ---@diagnostic disable-next-line: param-type-mismatch
-            require("gitsigns").nav_hunk("prev")
-          end,
-        },
-        {
-          "<space>j",
-          function()
-            ---@diagnostic disable-next-line: param-type-mismatch
-            require("gitsigns").nav_hunk("next")
-          end,
-        },
-        {
-          "gy",
-          function()
-            if vim.fn.mode() == "n" then
-              require("gitsigns").stage_hunk()
-            else
-              require("gitsigns").stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
-            end
-          end,
-          mode = { "n", "v" },
-        },
-        {
-          "ge",
-          function()
-            if vim.fn.mode() == "n" then
-              require("gitsigns").reset_hunk()
-            else
-              require("gitsigns").reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
-            end
-          end,
-          mode = { "n", "v" },
-        },
-      },
-      opts = {},
     },
 
     { "folke/persistence.nvim", event = "BufReadPre", opts = {} },
@@ -771,11 +651,155 @@ require("lazy").setup({
       },
     },
 
+    { "folke/tokyonight.nvim", priority = 1000 },
+
     {
       "folke/trouble.nvim",
       cmd = "Trouble",
       keys = { { "<space>x", "<cmd>Trouble diagnostics toggle<cr>" } },
       opts = {},
+    },
+
+    { "kawre/neotab.nvim", event = "InsertEnter", opts = {} },
+
+    {
+      "lewis6991/gitsigns.nvim",
+      event = "VeryLazy",
+      keys = {
+        {
+          "<space>t",
+          function()
+            if not vim.wo.diff then
+              require("gitsigns").diffthis("", { split = "rightbelow" })
+            end
+            for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+              if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(w)):find("^gitsigns://") then
+                return vim.schedule(function()
+                  vim.api.nvim_win_close(w, true)
+                end)
+              end
+            end
+          end,
+        },
+        {
+          "<space>k",
+          function()
+            ---@diagnostic disable-next-line: param-type-mismatch
+            require("gitsigns").nav_hunk("prev")
+          end,
+        },
+        {
+          "<space>j",
+          function()
+            ---@diagnostic disable-next-line: param-type-mismatch
+            require("gitsigns").nav_hunk("next")
+          end,
+        },
+        {
+          "gy",
+          function()
+            if vim.fn.mode() == "n" then
+              require("gitsigns").stage_hunk()
+            else
+              require("gitsigns").stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+            end
+          end,
+          mode = { "n", "v" },
+        },
+        {
+          "ge",
+          function()
+            if vim.fn.mode() == "n" then
+              require("gitsigns").reset_hunk()
+            else
+              require("gitsigns").reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+            end
+          end,
+          mode = { "n", "v" },
+        },
+      },
+      opts = {},
+    },
+
+    {
+      "neovim/nvim-lspconfig",
+      init = function()
+        -- stylua: ignore
+        vim.lsp.enable({"clangd", "gopls", "jdtls", "lua_ls", "pyright", "rust_analyzer", "ts_ls", "zls"})
+        vim.lsp.config("lua_ls", {
+          settings = {
+            Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true) } },
+          },
+        })
+        vim.lsp.config("pyright", { settings = { python = { pythonPath = ".venv/bin/python" } } })
+      end,
+    },
+
+    { "nvim-mini/mini-git", event = "VeryLazy", main = "mini.git", opts = {} },
+
+    { "nvim-mini/mini.ai", event = "VeryLazy", opts = { silent = true } },
+
+    { "nvim-mini/mini.icons", event = "VeryLazy", opts = {} },
+
+    {
+      "nvim-mini/mini.pairs",
+      event = "VeryLazy",
+      opts = {
+        modes = { insert = true, command = true, terminal = false },
+        skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
+        skip_ts = { "string" },
+        skip_unbalanced = true,
+        markdown = true,
+      },
+    },
+
+    { "nvim-mini/mini.splitjoin", event = "VeryLazy", opts = { mappings = { toggle = "gj" } } },
+
+    {
+      "nvim-mini/mini.surround",
+      event = "VeryLazy",
+      opts = {
+        mappings = {
+          find_left = "gsF",
+          highlight = "gsh",
+          add = "gsa",
+          replace = "gsr",
+          find = "gsf",
+          delete = "gsd",
+          update_n_lines = "gsn",
+        },
+        silent = true,
+      },
+    },
+
+    {
+      "Saghen/blink.cmp",
+      version = "*",
+      dependencies = { "rafamadriz/friendly-snippets" },
+      event = "InsertEnter",
+      opts = {
+        appearance = { nerd_font_variant = "normal" },
+        keymap = {
+          preset = "enter",
+          ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
+          ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
+          ["<Esc>"] = { "hide", "fallback" },
+        },
+        completion = {
+          menu = { draw = { columns = { { "label", gap = 1 }, { "kind_icon", "kind" } } } },
+          list = { selection = { preselect = false, auto_insert = false } },
+          documentation = { auto_show = true, auto_show_delay_ms = 0 },
+        },
+        cmdline = { enabled = false },
+        sources = {
+          default = { "lsp", "path", "snippets", "buffer" },
+          providers = { lsp = { fallbacks = {} } },
+        },
+        signature = { enabled = true },
+      },
+      init = function()
+        vim.lsp.config("*", { capabilities = require("blink.cmp").get_lsp_capabilities() })
+      end,
     },
 
     {
@@ -817,49 +841,25 @@ require("lazy").setup({
     },
 
     {
-      "neovim/nvim-lspconfig",
-      init = function()
-        -- stylua: ignore
-        vim.lsp.enable({"clangd", "gopls", "jdtls", "lua_ls", "pyright", "rust_analyzer", "ts_ls", "zls"})
-        vim.lsp.config("lua_ls", {
-          settings = {
-            Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true) } },
-          },
-        })
-        vim.lsp.config("pyright", { settings = { python = { pythonPath = ".venv/bin/python" } } })
-      end,
-    },
-
-    { "kawre/neotab.nvim", event = "InsertEnter", opts = {} },
-
-    {
-      "Saghen/blink.cmp",
-      version = "*",
-      dependencies = { "rafamadriz/friendly-snippets" },
-      event = "InsertEnter",
+      "stevearc/oil.nvim",
+      event = { "VimEnter */*,.*", "BufNew */*,.*" },
+      cmd = "Oil",
+      keys = { { "-", "<cmd>Oil<cr>" }, { "_", "<cmd>Oil .<cr>" } },
       opts = {
-        appearance = { nerd_font_variant = "normal" },
-        keymap = {
-          preset = "enter",
-          ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
-          ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
-          ["<Esc>"] = { "hide", "fallback" },
+        keymaps = { ["`"] = false, ["q"] = { "actions.close", mode = "n" } },
+        view_options = {
+          is_always_hidden = function(name, _)
+            return name == ".." or name == ".git" or name == ".venv"
+          end,
+          show_hidden = true,
         },
-        completion = {
-          menu = { draw = { columns = { { "label", gap = 1 }, { "kind_icon", "kind" } } } },
-          list = { selection = { preselect = false, auto_insert = false } },
-          documentation = { auto_show = true, auto_show_delay_ms = 0 },
-        },
-        cmdline = { enabled = false },
-        sources = {
-          default = { "lsp", "path", "snippets", "buffer" },
-          providers = { lsp = { fallbacks = {} } },
-        },
-        signature = { enabled = true },
+        delete_to_trash = true,
+        float = { border = "single" },
+        confirmation = { border = "single" },
+        progress = { border = "single" },
+        ssh = { border = "single" },
+        keymaps_help = { border = "single" },
       },
-      init = function()
-        vim.lsp.config("*", { capabilities = require("blink.cmp").get_lsp_capabilities() })
-      end,
     },
   },
 })
