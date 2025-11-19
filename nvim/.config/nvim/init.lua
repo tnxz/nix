@@ -4,10 +4,6 @@ for _, provider in ipairs(providers) do
 end
 
 vim.keymap.set({ "i", "n", "s" }, "<esc>", "<cmd>noh<CR><esc>")
-vim.keymap.set({ "n", "v", "t" }, "<left>", "<nop>")
-vim.keymap.set({ "n", "v", "t" }, "<right>", "<nop>")
-vim.keymap.set({ "n", "v", "t" }, "<up>", "<nop>")
-vim.keymap.set({ "n", "v", "t" }, "<down>", "<nop>")
 vim.keymap.set("n", "<tab>", "<C-w><C-w>")
 vim.keymap.set("n", "<space>r", "<cmd>restart<cr>")
 vim.keymap.set("n", "<space><space>", "<cmd>write<cr>")
@@ -40,6 +36,7 @@ vim.cmd({
     "ch=0", "et", "fcs=eob:\\ ,vert:\\ ", "ic", "scs", "mouse=",
     "shm+=I", "sb", "ts=2", "sw=2", "scl=yes", "ls=0", "stal=0",
     "spr", "so=7", "ve=block", "udf", "nu", "rnu", "spk=screen",
+    "guicursor^=t:ver25"
   },
   cmd = "set",
 })
@@ -59,17 +56,10 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 vim.api.nvim_create_autocmd("FileType", {
   group = vim.api.nvim_create_augroup("misc", { clear = true }),
-  pattern = { "man", "help" },
+  pattern = { "man", "help", "lazy" },
   callback = function()
     vim.opt_local.statuscolumn = ""
     vim.opt_local.signcolumn = "no"
-    vim.keymap.set("n", "q", function()
-      if #vim.api.nvim_list_wins() > 1 then
-        vim.cmd("quit")
-      else
-        vim.cmd("bdelete")
-      end
-    end, { buffer = true })
   end,
 })
 
@@ -118,6 +108,67 @@ vim.api.nvim_create_autocmd({ "BufUnload", "BufDelete" }, {
         end
       end
     end, 100)
+  end,
+})
+
+vim.api.nvim_create_autocmd({ "TermRequest" }, {
+  group = vim.api.nvim_create_augroup("term_osc7", { clear = true }),
+  callback = function(ev)
+    local val, n = string.gsub(ev.data.sequence, "\027]7;file://[^/]*", "")
+    if n > 0 then
+      local dir = val
+      if vim.fn.isdirectory(dir) == 0 then
+        vim.notify("invalid dir: " .. dir)
+        return
+      end
+      vim.b[ev.buf].osc7_dir = dir
+      if vim.api.nvim_get_current_buf() == ev.buf then
+        vim.cmd.cd(dir)
+      end
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd("DirChanged", {
+  group = vim.api.nvim_create_augroup("term_cwd_sync", { clear = true }),
+  callback = function()
+    local cwd = (vim.uv or vim.loop).cwd()
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if not vim.api.nvim_buf_is_loaded(buf) then
+        goto continue
+      end
+      if vim.bo[buf].buftype ~= "terminal" then
+        goto continue
+      end
+      local id = vim.b[buf].terminal_job_id
+      local pid = vim.b[buf].terminal_job_pid
+      if not id or not pid then
+        goto continue
+      end
+      if vim.fn.jobwait({ id }, 0)[1] ~= -1 then
+        goto continue
+      end
+      local parent_cmd = vim.trim(vim.fn.system("ps -p " .. pid .. " -o comm="))
+      if not parent_cmd:match("zsh") then
+        goto continue
+      end
+      local child_pids = vim.fn.systemlist("pgrep -P " .. pid)
+      if #child_pids == 1 and child_pids[1] == "" then
+        child_pids = {}
+      end
+      if #child_pids > 0 then
+        goto continue
+      end
+      vim.schedule(function()
+        vim.api.nvim_chan_send(id, "\x1b")
+        vim.api.nvim_chan_send(id, "0D")
+        vim.api.nvim_chan_send(id, "i")
+        vim.api.nvim_chan_send(id, vim.api.nvim_replace_termcodes("<C-e>", true, false, true))
+        vim.api.nvim_chan_send(id, vim.api.nvim_replace_termcodes("<C-u>", true, false, true))
+        vim.api.nvim_chan_send(id, "cd '" .. cwd .. "'\r")
+      end)
+      ::continue::
+    end
   end,
 })
 
@@ -354,12 +405,21 @@ require("lazy").setup({
       },
       opts = {
         bigfile = { enabled = true },
-        lazygit = { win = { position = "bottom", height = 0, width = 0, style = "minimal" } },
+        lazygit = { win = { position = "float", height = 0, width = 0, wo = { winbar = "" } } },
         quickfile = { enabled = true },
         statuscolumn = { enabled = true },
         terminal = {
-          win = { position = "bottom", height = 0, width = 0, style = "minimal" },
-          shell = "/bin/zsh -il",
+          win = {
+            position = "float",
+            height = 0.7,
+            width = 0,
+            row = 0.8,
+            col = 0,
+            wo = {
+              winbar = "%{ 'term://' .. fnamemodify(getcwd(), ':~') .. '//' .. getpid() .. ':' .. &shell }",
+              winhighlight = "WinBar:StatusLineNC",
+            },
+          },
         },
         words = { enabled = true },
         picker = {
@@ -368,6 +428,7 @@ require("lazy").setup({
             explorer = { hidden = true },
             files = { hidden = true },
             grep = { hidden = true },
+            help = { win = { input = { keys = { ["<CR>"] = { "tab", mode = { "n", "i" } } } } } },
             init_project = {
               items = {
                 { text = "rust" },
@@ -649,6 +710,16 @@ require("lazy").setup({
           },
         },
       },
+      config = function(_, opts)
+        require("snacks").terminal.tid = function(cmd, opt)
+          return vim.inspect({
+            cmd = type(cmd) == "table" and cmd or { cmd },
+            env = opt.env,
+            count = opt.count or vim.v.count1,
+          })
+        end
+        require("snacks").setup(opts)
+      end,
     },
 
     { "folke/tokyonight.nvim", priority = 1000 },
@@ -787,7 +858,7 @@ require("lazy").setup({
         },
         completion = {
           menu = { draw = { columns = { { "label", gap = 1 }, { "kind_icon", "kind" } } } },
-          list = { selection = { preselect = false, auto_insert = false } },
+          list = { selection = { preselect = false } },
           documentation = { auto_show = true, auto_show_delay_ms = 0 },
         },
         cmdline = { enabled = false },

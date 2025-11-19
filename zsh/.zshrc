@@ -1,3 +1,20 @@
+if [[ $(uname) == "Darwin" ]]; then
+  fpath+=(
+    /Applications/OrbStack.app/Contents/Resources/completions/zsh
+    /opt/homebrew/share/zsh/site-functions
+  )
+fi
+
+# https://lacamb.re/blog/osc7_in_neovim_third_time.html
+print_osc7() {
+  if [ "$ZSH_SUBSHELL" -eq 0 ]; then
+    printf "\033]7;file://%s/%s\033\\" "${HOST:-$(hostname)}" "$PWD"
+  fi
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook -Uz chpwd print_osc7
+print_osc7
+
 setopt interactivecomments
 setopt appendhistory
 setopt sharehistory
@@ -5,7 +22,7 @@ setopt incappendhistory
 setopt histignorealldups
 setopt prompt_subst
 
-[[ -d "$XDG_DATA_HOME"/zsh ]] || mkdir -p "$XDG_DATA_HOME"/zsh
+mkdir -p "$XDG_DATA_HOME"/zsh
 HISTSIZE=10000000
 SAVEHIST=10000000
 HISTFILE="$XDG_DATA_HOME"/zsh/zsh_history
@@ -25,10 +42,8 @@ function zle-keymap-select zle-line-init {
     viins|main) print -n '\e[6 q';;
   esac
 }
-zle-line-finish() { echo -ne '\e[2 q' }
 zle -N zle-line-init
 zle -N zle-keymap-select
-zle -N zle-line-finish
 
 function vi-yank-pbcopy { zle vi-yank; echo "$CUTBUFFER" | pbcopy }
 zle -N vi-yank-pbcopy
@@ -55,13 +70,6 @@ bindkey "^U" kill-whole-line
 bindkey "^P" history-search-backward
 bindkey "^N" history-search-forward
 
-autoload edit-command-line; zle -N edit-command-line
-bindkey '^[e' edit-command-line
-bindkey -M vicmd '^[[P' vi-delete-char
-bindkey -M vicmd '^[e' edit-command-line
-bindkey -M visual '^[[P' vi-delete
-
-alias ls="ls --color=auto"
 alias ll="ls -AS"
 alias c="printf '\e[H\e[3J'"
 alias l="ls -AS"

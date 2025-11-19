@@ -27,11 +27,6 @@ if [[ $(uname) == "Darwin" ]]; then
     /Applications/OrbStack.app/Contents/MacOS/xbin
   )
 
-  fpath+=(
-    /Applications/OrbStack.app/Contents/Resources/completions/zsh
-    /opt/homebrew/share/zsh/site-functions
-  )
-
   export _ZO_DATA_DIR="$XDG_DATA_HOME/zoxide"
 fi
 
