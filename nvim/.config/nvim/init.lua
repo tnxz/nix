@@ -362,9 +362,15 @@ require("lazy").setup({
           end,
         },
         {
+          "<space>e",
+          function()
+            require("snacks").picker.init_project()
+          end,
+        },
+        {
           "<space>v",
           function()
-            require("snacks").picker.project()
+            require("snacks").picker.projects()
           end,
         },
         {
@@ -405,15 +411,21 @@ require("lazy").setup({
       },
       opts = {
         bigfile = { enabled = true },
-        lazygit = { win = { position = "float", height = 0, width = 0, wo = { winbar = "" } } },
         quickfile = { enabled = true },
+        dashboard = {
+          enabled = true,
+          preset = { header = "" },
+          sections = { { section = "header" } },
+        },
+        words = { enabled = true },
         statuscolumn = { enabled = true },
+        lazygit = { win = { position = "float", height = 0, width = 0, wo = { winbar = "" } } },
         terminal = {
           win = {
             position = "float",
-            height = 0.7,
+            height = 0.4,
             width = 0,
-            row = 0.8,
+            row = 0.7,
             col = 0,
             wo = {
               winbar = "%{ 'term://' .. fnamemodify(getcwd(), ':~') .. '//' .. getpid() .. ':' .. &shell }",
@@ -421,14 +433,12 @@ require("lazy").setup({
             },
           },
         },
-        words = { enabled = true },
         picker = {
           prompt = "",
           sources = {
-            explorer = { hidden = true },
             files = { hidden = true },
             grep = { hidden = true },
-            help = { win = { input = { keys = { ["<CR>"] = { "tab", mode = { "n", "i" } } } } } },
+            explorer = { hidden = true },
             init_project = {
               items = {
                 { text = "rust" },
@@ -854,7 +864,6 @@ require("lazy").setup({
           preset = "enter",
           ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
           ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
-          ["<Esc>"] = { "hide", "fallback" },
         },
         completion = {
           menu = { draw = { columns = { { "label", gap = 1 }, { "kind_icon", "kind" } } } },
