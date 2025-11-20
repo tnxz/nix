@@ -74,14 +74,6 @@ alias ll="ls -AS"
 alias c="printf '\e[H\e[3J'"
 alias l="ls -AS"
 
-if (( $+commands[brew] )); then
-  u() {
-    brew update
-    [[ -f "~/src/nix/Brewfile" ]] && brew bundle --file="~/src/nix/Brewfile" --cleanup --zap --verbose
-    brew upgrade -g
-  }
-fi
-
 if (( $+commands[direnv] )); then
   eval "$(direnv hook zsh)"
   function e() {
