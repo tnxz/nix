@@ -35,8 +35,7 @@ vim.cmd({
     "nosc", "nosmd", "noswf", "nowb", "nowrap", "ph=10", "noru",
     "ch=0", "et", "fcs=eob:\\ ,vert:\\ ", "ic", "scs", "mouse=",
     "shm+=I", "sb", "ts=2", "sw=2", "scl=yes", "ls=0", "stal=0",
-    "spr", "so=7", "ve=block", "udf", "nu", "rnu", "spk=screen",
-    "guicursor^=t:ver25"
+    "spr", "so=7", "ve=block", "udf", "nu", "rnu"
   },
   cmd = "set",
 })
