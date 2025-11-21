@@ -7,12 +7,6 @@ vim.keymap.set({ "i", "n", "s" }, "<esc>", "<cmd>noh<CR><esc>")
 vim.keymap.set("n", "<tab>", "<C-w><C-w>")
 vim.keymap.set("n", "<space>r", "<cmd>restart<cr>")
 vim.keymap.set("n", "<space><space>", "<cmd>write<cr>")
-vim.keymap.set("n", "<A-j>", "<cmd>execute 'move .+' . v:count1<cr>==")
-vim.keymap.set("n", "<A-k>", "<cmd>execute 'move .-' . (v:count1 + 1)<cr>==")
-vim.keymap.set("i", "<A-j>", "<esc><cmd>m .+1<cr>==gi")
-vim.keymap.set("i", "<A-k>", "<esc><cmd>m .-2<cr>==gi")
-vim.keymap.set("v", "<A-j>", ":<C-u>execute \"'<,'>move '>+\" . v:count1<cr>gv=gv")
-vim.keymap.set("v", "<A-k>", ":<C-u>execute \"'<,'>move '<-\" . (v:count1 + 1)<cr>gv=gv")
 vim.keymap.set("n", "<S-h>", "<cmd>bprevious<cr>")
 vim.keymap.set("n", "<S-l>", "<cmd>bnext<cr>")
 vim.keymap.set("n", "n", "'Nn'[v:searchforward].'zv'", { expr = true })
@@ -299,6 +293,8 @@ require("lazy").setup({
     { "nvim-mini/mini-git", event = "VeryLazy", main = "mini.git", opts = {} },
 
     { "nvim-mini/mini.splitjoin", event = "VeryLazy", opts = {} },
+
+    { "nvim-mini/mini.move", event = "VeryLazy", opts = {} },
 
     { "folke/persistence.nvim", event = "BufReadPre", opts = {} },
 
