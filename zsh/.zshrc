@@ -109,5 +109,3 @@ fi
 if (( $+commands[zoxide] )); then
   eval "$(zoxide init zsh)"
 fi
-
-prompt='%B%F{magenta}$(if [[ $PWD == $HOME* ]]; then print -Pn "../$USER${PWD#$HOME}"; else print -Pn "%2~"; fi)%f%b '
