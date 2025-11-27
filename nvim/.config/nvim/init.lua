@@ -1,42 +1,57 @@
+vim.cmd([[set nosc nosmd noswf nowb ph=10 scl=yes noru ch=0 fcs=eob:\ ,vert:\  sw=2 
+\ ic scs et shm+=I sb ts=2 nowrap ls=0 stal=0 spr so=7 ve=block udf nu rnu mouse=]])
+
+vim.schedule(function() vim.o.clipboard = "unnamedplus" end)
+
 local providers = { "python3", "node", "perl", "ruby" }
 for _, provider in ipairs(providers) do
   vim.g["loaded_" .. provider .. "_provider"] = 0
 end
 
-vim.keymap.set({ "i", "n", "s" }, "<esc>", "<cmd>noh<CR><esc>")
-vim.keymap.set("n", "<tab>", "<C-w><C-w>")
-vim.keymap.set("n", "<space>r", "<cmd>restart<cr>")
 vim.keymap.set("n", "<space><space>", "<cmd>write<cr>")
-vim.keymap.set("n", "<S-h>", "<cmd>bprevious<cr>")
-vim.keymap.set("n", "<S-l>", "<cmd>bnext<cr>")
+vim.keymap.set("n", "<tab>", "<C-\\><C-n><C-w><C-w>")
+vim.keymap.set("n", "<space>r", "<cmd>restart<cr>")
+local function init_project()
+  local languages = {
+    rust = function(_) return "cargo init" end,
+    go = function(name) return "touch main.go && go mod init " .. vim.fn.shellescape(name) end,
+    python = function(_) return "uv init" end,
+  }
+  vim.ui.select(vim.tbl_keys(languages), { prompt = "project: " }, function(lang)
+    if not lang then return end
+    vim.ui.input({ prompt = "New Project Name: " }, function(name)
+      local cwd = vim.fn.expand("~/src/" .. name)
+      vim.fn.mkdir(cwd, "p")
+      local cmd = languages[lang](name)
+      vim.fn.jobstart("git init && " .. cmd, {
+        cwd = cwd,
+        on_exit = function(_, exit_code)
+          if exit_code == 0 then
+            vim.notify("project created successfully", vim.log.levels.INFO)
+          else
+            vim.notify("Error creating project", vim.log.levels.ERROR)
+          end
+        end,
+      })
+    end)
+  end)
+end
+vim.keymap.set("n", "<space>e", function() init_project() end)
+vim.keymap.set("n", "<A-j>", "<cmd>execute 'move .+' . v:count1<cr>==")
+vim.keymap.set("n", "<A-k>", "<cmd>execute 'move .-' . (v:count1 + 1)<cr>==")
+vim.keymap.set("i", "<A-j>", "<esc><cmd>m .+1<cr>==gi")
+vim.keymap.set("i", "<A-k>", "<esc><cmd>m .-2<cr>==gi")
+vim.keymap.set("v", "<A-j>", ":<C-u>execute \"'<,'>move '>+\" . v:count1<cr>gv=gv")
+vim.keymap.set("v", "<A-k>", ":<C-u>execute \"'<,'>move '<-\" . (v:count1 + 1)<cr>gv=gv")
+vim.keymap.set("n", "H", "<cmd>bprevious<cr>")
+vim.keymap.set("n", "L", "<cmd>bnext<cr>")
 vim.keymap.set("n", "n", "'Nn'[v:searchforward].'zv'", { expr = true })
 vim.keymap.set("x", "n", "'Nn'[v:searchforward]", { expr = true })
 vim.keymap.set("o", "n", "'Nn'[v:searchforward]", { expr = true })
 vim.keymap.set("n", "N", "'nN'[v:searchforward].'zv'", { expr = true })
 vim.keymap.set("x", "N", "'nN'[v:searchforward]", { expr = true })
 vim.keymap.set("o", "N", "'nN'[v:searchforward]", { expr = true })
-vim.keymap.set({ "i", "x", "n", "s" }, "<D-s>", "<cmd>w<cr><esc>")
-vim.keymap.set("x", "<", "<gv")
-vim.keymap.set("x", ">", ">gv")
-vim.keymap.set("n", "gco", "o<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>")
-vim.keymap.set("n", "gcO", "O<esc>Vcx<esc><cmd>normal gcc<cr>fxa<bs>")
-
-vim.diagnostic.config({ virtual_text = true })
-
-vim.cmd({
-  -- stylua: ignore
-  args = {
-    "nosc", "nosmd", "noswf", "nowb", "nowrap", "ph=10", "noru",
-    "ch=0", "et", "fcs=eob:\\ ,vert:\\ ", "ic", "scs", "mouse=",
-    "shm+=I", "sb", "ts=2", "sw=2", "scl=yes", "ls=0", "stal=0",
-    "spr", "so=7", "ve=block", "udf", "nu", "rnu"
-  },
-  cmd = "set",
-})
-
-vim.g.clipboard = "pbcopy"
-
-vim.schedule(function() vim.o.clipboard = "unnamedplus" end)
+vim.keymap.set({ "i", "n", "s" }, "<esc>", "<cmd>noh<CR><esc>")
 
 vim.api.nvim_create_autocmd("TextYankPost", {
   group = vim.api.nvim_create_augroup("highlight_yank", { clear = true }),
@@ -124,14 +139,21 @@ vim.api.nvim_create_autocmd("DirChanged", {
       local child_pids = vim.fn.systemlist("pgrep -P " .. pid)
       if #child_pids == 1 and child_pids[1] == "" then child_pids = {} end
       if #child_pids > 0 then goto continue end
-      vim.schedule(function()
-        vim.api.nvim_chan_send(id, "\x1b")
-        vim.api.nvim_chan_send(id, "0D")
-        vim.api.nvim_chan_send(id, "i")
-        vim.api.nvim_chan_send(id, vim.api.nvim_replace_termcodes("<C-e>", true, false, true))
-        vim.api.nvim_chan_send(id, vim.api.nvim_replace_termcodes("<C-u>", true, false, true))
-        vim.api.nvim_chan_send(id, "cd '" .. cwd .. "'\r")
-      end)
+      vim.schedule(
+        function()
+          vim.api.nvim_chan_send(
+            id,
+            "\x1b"
+              .. "0D"
+              .. "i"
+              .. vim.api.nvim_replace_termcodes("<C-e>", true, false, true)
+              .. vim.api.nvim_replace_termcodes("<C-u>", true, false, true)
+              .. "cd '"
+              .. cwd
+              .. "'\r"
+          )
+        end
+      )
       ::continue::
     end
   end,
@@ -155,6 +177,12 @@ require("tokyonight").setup({
     keywords = { italic = false },
   },
   style = "night",
+  on_highlights = function(hl, c)
+    hl.Normal = { bg = "black", fg = c.fg }
+    hl.BlinkCmpDoc = { fg = c.fg, bg = "#16161e" }
+    hl.BlinkCmpMenu = { fg = c.fg, bg = "#16161e" }
+    hl.BlinkCmpSignatureHelp = { fg = c.fg, bg = "#16161e" }
+  end,
 })
 require("tokyonight").load()
 
@@ -169,15 +197,35 @@ require("lazy").setup({
   lockfile = vim.fn.stdpath("state") .. "/lazy-lock.json",
   rocks = { enabled = false },
   install = { colorscheme = { "tokyonight" } },
-  ui = {
-    size = { width = 1, height = 1 },
-    icons = { loaded = "", not_loaded = "", list = { "", "", "", "" } },
-  },
+  ui = { backdrop = 30, icons = { loaded = "", not_loaded = "", list = { "", "", "", "" } } },
   change_detection = { enabled = false },
   default = { lazy = true },
   spec = {
 
     { "folke/tokyonight.nvim", priority = 1000 },
+
+    {
+      "nvim-treesitter/nvim-treesitter",
+      branch = "main",
+      event = { "BufReadPost", "BufNewFile", "BufWritePre", "VeryLazy" },
+      cmd = { "TSUpdate", "TSInstall", "TSLog", "TSUninstall" },
+      opts_extend = { "ensure_installed" },
+      opts = { ensure_installed = { "c", "lua", "markdown", "markdown_inline", "query", "vim", "vimdoc" } },
+      build = ":TSUpdate",
+      config = function(_, opts)
+        require("nvim-treesitter").install(opts.ensure_installed)
+        vim.api.nvim_create_autocmd("FileType", {
+          group = vim.api.nvim_create_augroup("treesitter.setup", { clear = true }),
+          callback = function(args)
+            local ft = args.match
+            local lang = vim.treesitter.language.get_lang(ft) or ft
+            if not vim.treesitter.language.add(lang) then return end
+            vim.treesitter.start(args.buf, lang)
+            vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end,
+        })
+      end,
+    },
 
     {
       "folke/noice.nvim",
@@ -204,30 +252,20 @@ require("lazy").setup({
           },
         },
         views = {
-          cmdline_popup = {
-            border = "none",
-            position = { row = 5, col = "50%" },
-            size = { width = 60, height = "auto" },
-            win_options = { winhighlight = { Normal = "Pmenu" } },
+          cmdline_popup = { border = "none", position = { row = 0, col = 0 }, size = { width = "auto", height = 1 } },
+          popupmenu = {
+            border = { style = "none", padding = { 0, 1 } },
+            position = { row = 1, col = 0 },
+            scrollbar = false,
+            size = { width = 60, max_height = 10 },
           },
-          popupmenu = { enabled = false },
-          split = { enter = true, merge = true },
+          split = { enter = true, scrollbar = false },
         },
         routes = {
           { filter = { event = "msg_show", min_height = 4 }, view = "split" },
           { filter = { event = "msg_show", any = { { find = "written" } } }, view = "mini" },
         },
       },
-    },
-
-    {
-      "folke/flash.nvim",
-      event = "VeryLazy",
-      keys = {
-        { "<space>n", mode = { "n", "x", "o" }, function() require("flash").jump() end },
-        { "r", mode = "o", function() require("flash").remote() end },
-      },
-      opts = {},
     },
 
     {
@@ -248,6 +286,26 @@ require("lazy").setup({
     },
 
     {
+      "folke/flash.nvim",
+      event = "VeryLazy",
+      keys = {
+        { "<space>n", mode = { "n", "x", "o" }, function() require("flash").jump() end },
+        { "r", mode = "o", function() require("flash").remote() end },
+      },
+      opts = {},
+    },
+
+    { "kawre/neotab.nvim", event = "InsertEnter", opts = {} },
+
+    { "nvim-mini/mini.pairs", event = "VeryLazy", opts = {} },
+
+    { "nvim-mini/mini.ai", event = "VeryLazy", opts = {} },
+
+    { "nvim-mini/mini.splitjoin", event = "VeryLazy", opts = {} },
+
+    { "nvim-mini/mini-git", main = "mini.git", event = "VeryLazy", opts = {} },
+
+    {
       "lewis6991/gitsigns.nvim",
       event = "VeryLazy",
       keys = {
@@ -265,7 +323,7 @@ require("lazy").setup({
         { "<space>k", function() require("gitsigns").nav_hunk("prev") end },
         { "<space>j", function() require("gitsigns").nav_hunk("next") end },
         {
-          "gy",
+          "gs",
           function()
             if vim.fn.mode() == "n" then
               require("gitsigns").stage_hunk()
@@ -276,7 +334,7 @@ require("lazy").setup({
           mode = { "n", "v" },
         },
         {
-          "ge",
+          "gh",
           function()
             if vim.fn.mode() == "n" then
               require("gitsigns").reset_hunk()
@@ -290,199 +348,101 @@ require("lazy").setup({
       opts = {},
     },
 
-    { "nvim-mini/mini-git", event = "VeryLazy", main = "mini.git", opts = {} },
-
-    { "nvim-mini/mini.splitjoin", event = "VeryLazy", opts = {} },
-
-    { "nvim-mini/mini.move", event = "VeryLazy", opts = {} },
-
-    { "folke/persistence.nvim", event = "BufReadPre", opts = {} },
-
     {
       "folke/snacks.nvim",
+      priority = 1000,
       lazy = false,
-      priority = 1001,
+      dependencies = {
+        { "folke/persistence.nvim", event = "BufReadPre", opts = {} },
+        {
+          "willothy/flatten.nvim",
+          lazy = false,
+          opts = {
+            window = { open = "alternate" },
+            hooks = { pre_open = function() require("snacks").terminal.toggle() end },
+          },
+        },
+      },
       keys = {
         { "<space>,", function() require("snacks").picker.buffers() end },
-        { "<space>h", function() require("snacks").picker.help() end },
-        { "<space>d", function() require("snacks").bufdelete({ force = true }) end },
-        { "<space>q", function() require("snacks").bufdelete.all({ force = true }) end },
+        { "<space>-", function() require("snacks").explorer() end },
         { "<space>/", function() require("snacks").picker.grep() end },
-        { "<space>s", function() require("snacks").picker() end },
+        { "<space>D", function() require("snacks").bufdelete.all({ force = true }) end },
+        { "<space>c", function() require("snacks").picker.zoxide() end },
+        { "<space>d", function() require("snacks").bufdelete({ force = true }) end },
         { "<space>f", function() require("snacks").picker.files() end },
-        { "<space>e", function() require("snacks").picker.init_project() end },
-        { "<space>v", function() require("snacks").picker.projects() end },
-        { "<space>z", function() require("snacks").picker.zoxide() end },
+        { "<space>g", function() require("snacks").lazygit() end },
+        { "<space>h", function() require("snacks").picker.help() end },
         { "<space>i", function() require("snacks").picker.icons() end },
+        { "<space>s", function() require("snacks").picker() end },
         { "<space>u", function() require("snacks").picker.undo() end },
+        { "<space>v", function() require("snacks").picker.projects() end },
+        { "<space>x", function() require("snacks").picker.diagnostics() end },
         { "`", function() require("snacks").terminal.toggle() end, mode = { "n", "t" } },
-        {
-          "<space>g",
-          function()
-            if require("snacks").git.get_root(vim.uv.cwd()) == nil then
-              vim.notify("not a git repo")
-              return
-            end
-            require("snacks").lazygit()
-          end,
-        },
-        {
-          "<space>c",
-          function()
-            if vim.uv.cwd() == vim.fs.normalize("~/src/nix") then
-              require("snacks").picker.files()
-            else
-              require("snacks").picker.files({
-                cwd = "~/src/nix",
-                confirm = function(picker, item)
-                  picker:close()
-                  if item then
-                    require("snacks").bufdelete.all({ force = true })
-                    vim.cmd.cd("~/src/nix")
-                    vim.schedule(function() vim.cmd("edit " .. item.text) end)
-                  end
-                end,
-              })
-            end
-          end,
-        },
       },
       opts = {
         bigfile = { enabled = true },
         quickfile = { enabled = true },
-        dashboard = {
-          enabled = true,
-          preset = { header = "" },
-          sections = { { section = "header" } },
-        },
-        words = { enabled = true },
         statuscolumn = { enabled = true },
-        lazygit = { win = { position = "float", height = 0, width = 0, wo = { winbar = "" } } },
-        terminal = {
-          win = {
-            position = "float",
-            height = 0.4,
-            width = 0,
-            row = 0.7,
-            col = 0,
-            wo = {
-              winbar = "%{ 'term://' .. fnamemodify(getcwd(), ':~') .. '//' .. getpid() .. ':' .. &shell }",
-              winhighlight = "WinBar:StatusLineNC",
-            },
-          },
-        },
+        indent = { enabled = true },
+        dashboard = { preset = { header = "" }, sections = { { section = "header" } } },
+        input = { icon = "", prompt_pos = "left", win = { border = "none", width = vim.o.co, row = 0, col = 0 } },
+        explorer = { replace_netrw = true, trash = true },
+        terminal = { win = { position = "float", height = 0, width = 0 } },
         picker = {
           prompt = "",
           sources = {
             files = { hidden = true },
             grep = { hidden = true },
-            explorer = { hidden = true },
-            init_project = {
-              items = {
-                { text = "rust" },
-                { text = "python" },
-                { text = "go" },
-              },
-              format = "text",
-              layout = "dropdown",
-              confirm = function(picker, item)
-                picker:close()
-                if not item then return end
-                local lang = type(item) == "table" and (item.text or item[1]) or tostring(item)
-                vim.ui.input({ prompt = "󱏒  " }, function(name)
-                  if not name or name == "" then
-                    vim.notify("Cancelled: no name provided", vim.log.levels.WARN)
-                    return
-                  end
-                  local proj = vim.fs.normalize("~/src/" .. name)
-                  vim.uv.fs_mkdir(vim.fs.normalize("~/src"), tonumber("755", 8))
-                  vim.uv.fs_mkdir(proj, tonumber("755", 8))
-                  local cmds = {
-                    rust = "cargo init",
-                    go = string.format("go mod init %s && git init", vim.fn.fnamemodify(proj, ":t")),
-                    python = "uv init && uv venv",
-                  }
-                  local function run(cmd, cwd)
-                    local full_cmd = string.format("cd %s && %s", vim.fn.fnameescape(cwd), cmd)
-                    vim.fn.system(full_cmd)
-                    return vim.v.shell_error == 0
-                  end
-                  local ok = run(cmds[lang], proj)
-                  if ok then
-                    vim.notify(lang .. " project initialized successfully!")
-                    vim.cmd("cd " .. vim.fn.fnameescape(proj))
-                    require("snacks").bufdelete.all({ force = true })
-                    if lang == "go" then
-                      local main_go = proj .. "/main.go"
-                      local fd = vim.uv.fs_open(main_go, "w", 420)
-                      if not fd then return end
-                      vim.uv.fs_write(fd, 'package main; import "fmt"; func main() { fmt.Println("src") }')
-                      vim.uv.fs_close(fd)
-                    end
-                    if lang == "python" then
-                      local envrc = proj .. "/.envrc"
-                      local fd = vim.uv.fs_open(envrc, "w", 420)
-                      if not fd then return end
-                      vim.uv.fs_write(fd, "layout uv-venv")
-                      vim.uv.fs_close(fd)
-                    end
-                    local files = {
-                      rust = proj .. "/src/main.rs",
-                      go = proj .. "/main.go",
-                      python = proj .. "/main.py",
-                    }
-                    local path = files[lang]
-                    if path and vim.fn.filereadable(path) == 1 then vim.cmd("edit " .. vim.fn.fnameescape(path)) end
-                  else
-                    vim.notify("Initialization failed!", vim.log.levels.ERROR)
-                  end
-                end)
-              end,
-            },
-            project = {
-              items = { { text = "new" }, { text = "recent" } },
-              format = "text",
-              layout = "dropdown",
-              confirm = function(picker, item)
-                picker:close()
-                if item.text == "new" then
-                  require("snacks").picker.init_project()
-                elseif item.text == "recent" then
-                  require("snacks").picker.projects()
-                end
-              end,
+            explorer = {
+              hidden = true,
+              win = { list = { keys = { ["o"] = "explorer_add" } } },
             },
             projects = {
               dev = "~/src",
               recent = false,
-              confirm = function(picker)
-                require("snacks").bufdelete.all({ force = true })
-                picker:action("load_session")
-              end,
               win = {
                 input = {
                   keys = {
-                    ["n"] = { "picker_init_project", mode = { "n" } },
-                    ["<c-n>"] = { "picker_init_project", mode = { "i", "n" } },
-                    ["<c-x>"] = { "project_delete", mode = { "i", "n" } },
+                    ["<c-x>"] = { "project_remove", mode = { "i", "n" } },
+                    ["<c-n>"] = { "project_add", mode = { "i", "n" } },
                   },
                 },
-                list = { keys = { ["dd"] = "project_delete" } },
+                list = { keys = { ["dd"] = "project_remove", ["n"] = "project_add" } },
               },
               actions = {
-                picker_init_project = { action = "picker", source = "init_project" },
-                project_delete = function(picker, item)
+                project_remove = function(picker, item)
+                  if not item or not item.file then return end
                   local path = item.file
-                  if vim.uv.cwd() == path then
-                    vim.notify("🟥 Trash aborted : " .. path, vim.log.levels.ERROR)
-                    return
-                  end
-                  vim.fn.system({ "trash", vim.fn.fnameescape(path) })
-                  vim.notify(
-                    (vim.v.shell_error == 0 and "🗑️ Trashed: " or "🟥 Trash aborted: ") .. path,
-                    vim.v.shell_error == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
-                  )
-                  picker:refresh()
+                  if vim.uv.cwd() == path then return vim.notify("cwd??") end
+                  if picker._project_removing then return end
+                  picker._project_removing = true
+                  require("snacks").picker.util.cmd({ "trash", path }, function()
+                    picker._project_removing = false
+                    picker:refresh()
+                  end)
+                end,
+                project_add = function(picker)
+                  picker:close()
+                  init_project()
+                end,
+              },
+            },
+            zoxide = {
+              win = {
+                input = { keys = { ["<c-x>"] = { "zoxide_remove", mode = { "i", "n" } } } },
+                list = { keys = { ["dd"] = "zoxide_remove" } },
+              },
+              actions = {
+                zoxide_remove = function(picker, item)
+                  if not item or not item.file then return end
+                  local path = item.file
+                  if picker._zoxide_removing then return end
+                  picker._zoxide_removing = true
+                  require("snacks").picker.util.cmd({ "zoxide", "remove", path }, function()
+                    picker._zoxide_removing = false
+                    picker:refresh()
+                  end)
                 end,
               },
             },
@@ -496,13 +456,6 @@ require("lazy").setup({
             },
             list = { keys = { ["<Tab>"] = "list_down", ["<S-Tab>"] = "list_up" } },
           },
-          layout = function()
-            if vim.o.columns < 120 then
-              return { cycle = true, preset = "dropdown" }
-            else
-              return { preset = "default" }
-            end
-          end,
           previewers = { diff = { style = "syntax", wo = { wrap = false } } },
           layouts = {
             default = {
@@ -555,9 +508,9 @@ require("lazy").setup({
               cycle = true,
               preview = false,
               layout = {
-                width = 0.5,
-                min_width = 80,
-                height = 0.4,
+                width = 70,
+                min_width = 70,
+                height = 0.8,
                 box = "vertical",
                 border = "single",
                 { win = "input", height = 1, border = "bottom" },
@@ -588,11 +541,7 @@ require("lazy").setup({
                 height = 0.4,
                 position = "bottom",
                 { win = "input", height = 1 },
-                {
-                  box = "horizontal",
-                  { win = "list" },
-                  { win = "preview", width = 0.6 },
-                },
+                { box = "horizontal", { win = "list" }, { win = "preview", width = 0.6 } },
               },
             },
             ivy_split = {
@@ -652,15 +601,36 @@ require("lazy").setup({
           })
         end
         require("snacks").setup(opts)
+        vim.api.nvim_create_autocmd("WinLeave", {
+          group = vim.api.nvim_create_augroup("toggle_snacks_terminal", { clear = true }),
+          callback = function(args)
+            if vim.bo[args.buf].filetype == "snacks_terminal" then require("snacks").terminal.toggle() end
+          end,
+        })
       end,
     },
 
     {
       "stevearc/conform.nvim",
-      event = { "VimEnter" },
+      event = { "BufWritePost" },
       cmd = { "ConformInfo" },
-      config = function()
-        require("conform").formatters = {
+      opts = {
+        format_after_save = { lsp_format = "fallback" },
+        formatters_by_ft = {
+          c = { "clang_format" },
+          cpp = { "clang_format" },
+          go = { "gofumpt" },
+          java = { "google-java-format" },
+          json = { "jq" },
+          lua = { "stylua" },
+          nix = { "alejandra" },
+          python = { "ruff", "ruff_fix", "ruff_format", "ruff_organize_imports" },
+          rust = { "rustfmt" },
+          yaml = { "yamlfmt" },
+          zig = { "zigfmt" },
+          ["_"] = { "trim_whitespace" },
+        },
+        formatters = {
           stylua = {
             prepend_args = {
               "--indent-type",
@@ -674,48 +644,21 @@ require("lazy").setup({
             },
           },
           clang_format = { prepend_args = { "--style=Google" } },
-        }
-        require("conform").setup({
-          format_after_save = { lsp_format = "fallback" },
-          formatters_by_ft = {
-            c = { "clang_format" },
-            cpp = { "clang_format" },
-            go = { "gofumpt" },
-            java = { "google-java-format" },
-            json = { "jq" },
-            lua = { "stylua" },
-            nix = { "alejandra" },
-            python = { "ruff", "ruff_fix", "ruff_format", "ruff_organize_imports" },
-            rust = { "rustfmt" },
-            yaml = { "yamlfmt" },
-            zig = { "zigfmt" },
-            ["_"] = { "trim_whitespace" },
-          },
-        })
-      end,
+        },
+      },
     },
 
     {
       "neovim/nvim-lspconfig",
       init = function()
-        -- stylua: ignore
-        vim.lsp.enable({"clangd", "gopls", "jdtls", "lua_ls", "pyright", "rust_analyzer", "ts_ls", "zls"})
-        vim.lsp.config("lua_ls", {
-          settings = {
-            Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true) } },
-          },
-        })
+        vim.lsp.enable({ "clangd", "gopls", "jdtls", "lua_ls", "pyright", "rust_analyzer", "ts_ls", "zls" })
+        vim.lsp.config(
+          "lua_ls",
+          { settings = { Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true) } } } }
+        )
         vim.lsp.config("pyright", { settings = { python = { pythonPath = ".venv/bin/python" } } })
       end,
     },
-
-    { "folke/trouble.nvim", keys = { { "<space>x", "<cmd>Trouble diagnostics toggle<cr>" } }, opts = {} },
-
-    { "nvim-mini/mini.ai", event = "VeryLazy", opts = {} },
-
-    { "nvim-mini/mini.pairs", event = "VeryLazy", opts = {} },
-
-    { "kawre/neotab.nvim", event = "InsertEnter", opts = {} },
 
     {
       "Saghen/blink.cmp",
@@ -725,20 +668,29 @@ require("lazy").setup({
       opts = {
         appearance = { nerd_font_variant = "normal" },
         keymap = {
-          preset = "enter",
+          preset = "default",
           ["<Tab>"] = { "select_next", "snippet_forward", "fallback" },
           ["<S-Tab>"] = { "select_prev", "snippet_backward", "fallback" },
+          ["<CR>"] = {
+            function(cmp)
+              if cmp.is_menu_visible() then
+                if cmp.get_selected_item() then
+                  return cmp.accept()
+                else
+                  return cmp.cancel()
+                end
+              end
+            end,
+            "fallback",
+          },
         },
         completion = {
           menu = { draw = { columns = { { "label", gap = 1 }, { "kind_icon", "kind" } } } },
           list = { selection = { preselect = false } },
-          documentation = { auto_show = true, auto_show_delay_ms = 0 },
+          documentation = { auto_show = true, auto_show_delay_ms = 0, window = { scrollbar = false } },
         },
         cmdline = { enabled = false },
-        sources = {
-          default = { "lsp", "path", "snippets", "buffer" },
-          providers = { lsp = { fallbacks = {} } },
-        },
+        sources = { default = { "lsp", "path", "snippets", "buffer" }, providers = { lsp = { fallbacks = {} } } },
         signature = { enabled = true },
       },
       init = function() vim.lsp.config("*", { capabilities = require("blink.cmp").get_lsp_capabilities() }) end,
