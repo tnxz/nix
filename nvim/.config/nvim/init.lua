@@ -20,6 +20,7 @@ local function init_project()
   vim.ui.select(vim.tbl_keys(languages), { prompt = "project: " }, function(lang)
     if not lang then return end
     vim.ui.input({ prompt = "New Project Name: " }, function(name)
+      if not name or name == "" then return vim.notify("Empty Project Name", vim.log.levels.WARN) end
       local cwd = vim.fn.expand("~/src/" .. name)
       vim.fn.mkdir(cwd, "p")
       local cmd = languages[lang](name)
@@ -161,9 +162,7 @@ vim.api.nvim_create_autocmd("DirChanged", {
 
 local tokyopath = vim.fn.stdpath("data") .. "/lazy/tokyonight.nvim"
 local tokyorepo = "https://github.com/folke/tokyonight.nvim.git"
-if not (vim.uv or vim.loop).fs_stat(tokyopath) then
-  vim.cmd("!git clone --filter=blob:none " .. tokyorepo .. " " .. tokyopath)
-end
+if not vim.uv.fs_stat(tokyopath) then vim.cmd("!git clone --filter=blob:none " .. tokyorepo .. " " .. tokyopath) end
 vim.opt.rtp:prepend(tokyopath)
 
 ---@diagnostic disable: missing-fields
@@ -188,9 +187,7 @@ require("tokyonight").load()
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 local lazyrepo = "https://github.com/folke/lazy.nvim.git"
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
-  vim.cmd("!git clone --filter=blob:none " .. lazyrepo .. " " .. lazypath)
-end
+if not vim.uv.fs_stat(lazypath) then vim.cmd("!git clone --filter=blob:none " .. lazyrepo .. " " .. lazypath) end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
@@ -227,9 +224,10 @@ require("lazy").setup({
       end,
     },
 
+    { "MunifTanjim/nui.nvim", lazy = true },
+
     {
       "folke/noice.nvim",
-      dependencies = { "MunifTanjim/nui.nvim" },
       event = "VeryLazy",
       opts = {
         lsp = {
@@ -348,21 +346,21 @@ require("lazy").setup({
       opts = {},
     },
 
+    { "folke/persistence.nvim", event = "BufReadPre", opts = {} },
+
+    {
+      "willothy/flatten.nvim",
+      lazy = false,
+      opts = {
+        window = { open = "alternate" },
+        hooks = { pre_open = function() require("snacks").terminal.toggle() end },
+      },
+    },
+
     {
       "folke/snacks.nvim",
       priority = 1000,
       lazy = false,
-      dependencies = {
-        { "folke/persistence.nvim", event = "BufReadPre", opts = {} },
-        {
-          "willothy/flatten.nvim",
-          lazy = false,
-          opts = {
-            window = { open = "alternate" },
-            hooks = { pre_open = function() require("snacks").terminal.toggle() end },
-          },
-        },
-      },
       keys = {
         { "<space>,", function() require("snacks").picker.buffers() end },
         { "<space>-", function() require("snacks").explorer() end },
