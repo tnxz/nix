@@ -19,13 +19,7 @@ if [[ $(uname) == "Darwin" ]]; then
   SHELL_SESSIONS_DISABLE=1
   export CLICOLOR=1
 
-  path=(
-    /opt/homebrew/bin
-    /opt/homebrew/sbin
-    /opt/homebrew/opt/llvm/bin
-    $path
-    /Applications/OrbStack.app/Contents/MacOS/xbin
-  )
+  path=(/opt/homebrew/bin /opt/homebrew/sbin $path /Applications/OrbStack.app/Contents/MacOS/xbin)
 
   export _ZO_DATA_DIR="$XDG_DATA_HOME/zoxide"
 fi

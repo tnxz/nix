@@ -5,7 +5,6 @@ if [[ $(uname) == "Darwin" ]]; then
   )
 fi
 
-# https://lacamb.re/blog/osc7_in_neovim_third_time.html
 print_osc7() {
   if [ "$ZSH_SUBSHELL" -eq 0 ]; then
     printf "\033]7;file://%s/%s\033\\" "${HOST:-$(hostname)}" "$PWD"
@@ -73,16 +72,6 @@ bindkey "^N" history-search-forward
 alias ll="ls -AS"
 alias c="printf '\e[H\e[3J'"
 alias l="ls -AS"
-
-if (( $+commands[direnv] )); then
-  eval "$(direnv hook zsh)"
-  function e() {
-    [ $# -ne 1 ] && return 1
-    [ ! -d "$1" ] && mkdir -p "$1"
-    cd "$1" || return 1
-    direnv edit .
-  }
-fi
 
 if (( $+commands[fzf] )); then
   source <(fzf --zsh)

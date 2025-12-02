@@ -1,6 +1,6 @@
 git:
   autoFetch: false
 gui:
-  border: single
+  border: hidden
   showBottomLine: false
   showCommandLog: false
