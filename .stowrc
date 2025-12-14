@@ -1,3 +1,4 @@
 --target=~
 --no-folding
 --verbose
+--dotfiles
