@@ -1,3 +1,2 @@
 --start-as=maximized
 -d ~/src/
-/bin/zsh -c "nvim"
